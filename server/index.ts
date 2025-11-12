@@ -38,6 +38,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+
+  // Health check route
+  app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -84,12 +90,13 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  const distPath = new URL('../dist/public/index.html', import.meta.url).pathname.replace(/^\/(.:)/, '$1');
   server.listen({
     port,
     host: "0.0.0.0",
   }, () => {
-    // Clear startup log to help Galaxy logs show app readiness
     log(`serving on port ${port}`);
-    console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'} | PORT=${port} | dist exists=${require('fs').existsSync(new URL('../dist/public', import.meta.url).pathname.replace(/^\/(.:)/, '$1'))}`);
+    const exists = require('fs').existsSync(distPath);
+    console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'} | PORT=${port} | dist/public/index.html exists=${exists} | path=${distPath}`);
   });
 })();
