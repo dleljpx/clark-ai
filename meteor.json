@@ -2,8 +2,5 @@
   "name": "clark-ai",
   "buildCommand": "npm ci && npm run build",
   "startCommand": "npm start",
-  "port": 5000,
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "port": 5000
 }

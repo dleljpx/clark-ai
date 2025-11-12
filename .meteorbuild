@@ -1,0 +1,6 @@
+{
+  "name": "clark-ai",
+  "docker": {
+    "image": "clark-ai:latest"
+  }
+}
