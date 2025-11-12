@@ -19,4 +19,5 @@ EXPOSE 5000
 
 # Start the app
 ENV NODE_ENV=production
-CMD ["npm", "start"]
+# Use shell form to ensure cross-env and other commands work
+CMD npm start
