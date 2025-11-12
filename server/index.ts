@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -61,23 +64,19 @@ app.use((req, res, next) => {
   // This avoids running Vite middleware (which opens many file watchers)
   // in environments like Galaxy where file-watch limits cause EMFILE errors.
   try {
-    const builtPublic = new URL("../dist/public", import.meta.url);
-    // fs.existsSync expects a filesystem path
-    // convert URL to path and check
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fs = require("fs");
-    const builtPath = builtPublic.pathname.replace(/^\/(.:)/, "$1");
-    if (fs.existsSync(builtPath)) {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const distPublicPath = resolve(__dirname, "..", "dist", "public");
+    const hasBuiltClient = existsSync(distPublicPath);
+    
+    if (hasBuiltClient) {
       serveStatic(app);
     } else if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
-      // No build found and not in development: log a helpful message
-      console.warn("No production build found at", builtPath, "— the server may return 404 for the client.");
-      serveStatic(app); // let it try and produce a clear error if missing
+      console.warn("No production build found at", distPublicPath, "— the server may return 404 for the client.");
+      serveStatic(app);
     }
   } catch (err) {
-    // fallback behavior: if anything goes wrong, fall back to development middleware when appropriate
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
@@ -90,13 +89,14 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  const distPath = new URL('../dist/public/index.html', import.meta.url).pathname.replace(/^\/(.:)/, '$1');
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const distIndexPath = resolve(__dirname, "..", "dist", "public", "index.html");
   server.listen({
     port,
     host: "0.0.0.0",
   }, () => {
     log(`serving on port ${port}`);
-    const exists = require('fs').existsSync(distPath);
-    console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'} | PORT=${port} | dist/public/index.html exists=${exists} | path=${distPath}`);
+    const indexExists = existsSync(distIndexPath);
+    console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'} | PORT=${port} | dist/public/index.html exists=${indexExists}`);
   });
 })();
