@@ -51,10 +51,32 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+  // If a production build exists, always serve static files from it.
+  // This avoids running Vite middleware (which opens many file watchers)
+  // in environments like Galaxy where file-watch limits cause EMFILE errors.
+  try {
+    const builtPublic = new URL("../dist/public", import.meta.url);
+    // fs.existsSync expects a filesystem path
+    // convert URL to path and check
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fs = require("fs");
+    const builtPath = builtPublic.pathname.replace(/^\/(.:)/, "$1");
+    if (fs.existsSync(builtPath)) {
+      serveStatic(app);
+    } else if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      // No build found and not in development: log a helpful message
+      console.warn("No production build found at", builtPath, "— the server may return 404 for the client.");
+      serveStatic(app); // let it try and produce a clear error if missing
+    }
+  } catch (err) {
+    // fallback behavior: if anything goes wrong, fall back to development middleware when appropriate
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
@@ -66,6 +88,8 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
   }, () => {
+    // Clear startup log to help Galaxy logs show app readiness
     log(`serving on port ${port}`);
+    console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'} | PORT=${port} | dist exists=${require('fs').existsSync(new URL('../dist/public', import.meta.url).pathname.replace(/^\/(.:)/, '$1'))}`);
   });
 })();
