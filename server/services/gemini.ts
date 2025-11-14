@@ -5,9 +5,7 @@ const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
 // Validate API key on startup
 if (!API_KEY) {
-  console.error("❌ CRITICAL: No Gemini API key found!");
-  console.error("Please set either GEMINI_API_KEY or GOOGLE_API_KEY environment variable.");
-  console.error("Get your API key from: https://aistudio.google.com/apikey");
+  // Silently fail - error will be thrown when needed
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY || "" });
@@ -84,24 +82,19 @@ export async function generateChatResponse(messages: ChatMessage[], isFirstMessa
 
     return response.text || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    console.error("Error status:", error.status);
-    console.error("Error message:", error.message);
-    console.error("Full error:", JSON.stringify(error, null, 2));
-
     // Handle specific error cases
     if (!API_KEY) {
-      throw new Error("Gemini API key is not configured. Please set GEMINI_API_KEY or GOOGLE_API_KEY environment variable. Get your key from: https://aistudio.google.com/apikey");
+      throw new Error("CLARK API key is not configured. Please set GEMINI_API_KEY or GOOGLE_API_KEY environment variable. Get your key from: https://aistudio.google.com/apikey");
     } else if (error.status === 401 || error.message?.includes('API key') || error.message?.includes('authentication')) {
-      throw new Error("Invalid or expired API key. Please verify your Gemini API key is correct. Get a new key from: https://aistudio.google.com/apikey");
+      throw new Error("Invalid or expired API key. Please verify your CLARK API key is correct. Get a new key from: https://aistudio.google.com/apikey");
     } else if (error.status === 429 || error.message?.includes('rate limit')) {
-      throw new Error("Rate limit exceeded. The Gemini service is temporarily busy. Please try again in a moment.");
+      throw new Error("Rate limit exceeded. The CLARK service is temporarily busy. Please try again in a moment.");
     } else if (error.status === 500 || error.message?.includes('500')) {
-      throw new Error("Gemini service is temporarily unavailable. Please try again later.");
+      throw new Error("CLARK service is temporarily unavailable. Please try again later.");
     } else if (error.status === 404 || error.message?.includes('not found')) {
       throw new Error("The AI model is not available. Please check your API configuration.");
     } else if (error.message?.includes('network') || error.message?.includes('timeout')) {
-      throw new Error("Network error connecting to Gemini service. Please check your internet connection and try again.");
+      throw new Error("Network error connecting to CLARK service. Please check your internet connection and try again.");
     } else {
       throw new Error(`Failed to generate AI response: ${error.message || 'Unknown error'}`);
     }

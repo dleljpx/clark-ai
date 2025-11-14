@@ -73,7 +73,6 @@ app.use((req, res, next) => {
     } else if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
-      console.warn("No production build found at", distPublicPath, "— the server may return 404 for the client.");
       serveStatic(app);
     }
   } catch (err) {
@@ -96,7 +95,5 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
   }, () => {
     log(`serving on port ${port}`);
-    const indexExists = existsSync(distIndexPath);
-    console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'} | PORT=${port} | dist/public/index.html exists=${indexExists}`);
   });
 })();

@@ -42,7 +42,6 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
         throw new Error("Failed to update conversation instructions");
       }
     } catch (error) {
-      console.error("Failed to update conversation system instructions:", error);
       toast({
         title: "Error",
         description: "Failed to update conversation system instructions",

@@ -47,8 +47,6 @@ export async function extractTextFromImage(imageBase64: string): Promise<string>
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Vision API Error Response:", errorText);
       throw new Error(`Vision API request failed: ${response.status} ${response.statusText}`);
     }
 
@@ -69,8 +67,6 @@ export async function extractTextFromImage(imageBase64: string): Promise<string>
     return textAnnotations[0].description || "No text found in image";
     
   } catch (error: any) {
-    console.error("Error extracting text from image:", error);
-    
     if (error.message?.includes('API key')) {
       throw new Error("Invalid Google Cloud Vision API key. Please check your configuration.");
     } else if (error.message?.includes('PERMISSION_DENIED')) {

@@ -13,7 +13,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conversations = await storage.getConversationsForUser(userId);
       res.json(conversations);
     } catch (error) {
-      console.error("Error fetching conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
     }
   });
@@ -30,7 +29,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(conversation);
     } catch (error) {
-      console.error("Error fetching conversation:", error);
       res.status(500).json({ error: "Failed to fetch conversation" });
     }
   });
@@ -50,7 +48,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conversation = await storage.createConversation(conversationData);
       res.status(201).json(conversation);
     } catch (error) {
-      console.error("Error creating conversation:", error);
       res.status(500).json({ error: "Failed to create conversation" });
     }
   });
@@ -62,7 +59,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
-      console.error("Error deleting conversation:", error);
       res.status(500).json({ error: "Failed to delete conversation" });
     }
   });
@@ -151,22 +147,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (title) {
             try {
-              console.log("Extracted title from AI response:", title);
               await storage.updateConversationTitle(conversationId, title);
-              console.log("Title updated successfully");
             } catch (titleError) {
-              console.error("Error updating conversation title:", titleError);
               // Continue anyway, title update is not critical
             }
           } else {
             // Fallback to old method if no title was found in response
             try {
-              console.log("No title found in response, generating fallback title");
               const fallbackTitle = await generateConversationTitle(content);
-              console.log("Generated fallback title:", fallbackTitle);
               await storage.updateConversationTitle(conversationId, fallbackTitle);
             } catch (titleError) {
-              console.error("Error generating fallback title:", titleError);
+              // Title generation failed, continue anyway
             }
           }
         }
@@ -186,14 +177,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (aiError: any) {
-        console.error("AI generation error:", aiError);
         const errorMessage = aiError.message || "Failed to generate AI response";
         
         // Check if it's an API key issue
         if (errorMessage.includes("API key") || errorMessage.includes("not configured")) {
           return res.status(503).json({ 
             error: errorMessage,
-            hint: "Please configure your Gemini API key. Visit: https://aistudio.google.com/apikey",
+            hint: "Please configure your CLARK API key. Visit: https://aistudio.google.com/apikey",
             userMessage
           });
         }
@@ -205,7 +195,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error("Error processing message:", error);
       res.status(500).json({ error: "Failed to process message" });
     }
   });
@@ -217,7 +206,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMessagesForConversation(id);
       res.status(204).send();
     } catch (error) {
-      console.error("Error clearing conversation:", error);
       res.status(500).json({ error: "Failed to clear conversation" });
     }
   });
@@ -228,7 +216,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const instructions = getSystemInstructions();
       res.json({ instructions });
     } catch (error) {
-      console.error("Error getting system instructions:", error);
       res.status(500).json({ error: "Failed to get system instructions" });
     }
   });
@@ -245,7 +232,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setSystemInstructions(instructions);
       res.json({ success: true, instructions: getSystemInstructions() });
     } catch (error) {
-      console.error("Error updating system instructions:", error);
       res.status(500).json({ error: "Failed to update system instructions" });
     }
   });
@@ -268,7 +254,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateConversationSystemInstructions(id, instructions);
       res.json({ success: true, instructions });
     } catch (error) {
-      console.error("Error updating conversation system instructions:", error);
       res.status(500).json({ error: "Failed to update conversation system instructions" });
     }
   });

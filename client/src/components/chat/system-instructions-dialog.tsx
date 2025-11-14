@@ -29,7 +29,6 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
       setInstructions(data.instructions);
       setOriginalInstructions(data.instructions);
     } catch (error) {
-      console.error("Failed to load system instructions:", error);
       toast({
         title: "Error",
         description: "Failed to load system instructions",
@@ -59,7 +58,6 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
         throw new Error("Failed to save instructions");
       }
     } catch (error) {
-      console.error("Failed to save system instructions:", error);
       toast({
         title: "Error",
         description: "Failed to save system instructions",
