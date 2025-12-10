@@ -39,6 +39,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     setLiked(liked === isLike ? null : isLike);
   };
 
+  /**
+   * renderText: handles code fences (```), inline code (`), bold (**text**),
+   * and custom embed syntax (label)/%^url^%/
+   */
   const renderText = (txt: string, keyPrefix: string) => {
     const embedRegex = /\((.*?)\)\/%\^(.*?)\^%\//g;
 
@@ -59,7 +63,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
         const inlineParts = part.split("`");
         return inlineParts.map((ip, ipIndex) => {
-          if (ipIndex % 2 === 1)
+          if (ipIndex % 2 === 1) {
             return (
               <code
                 key={`${k}-inline-${pIndex}-${ipIndex}`}
@@ -68,9 +72,12 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 {ip}
               </code>
             );
+          }
 
+          // handle bold and embeds inside the non-code text
           const boldParts = ip.split("**");
           return boldParts.map((bp, bpIndex) => {
+            // process embed syntax inside this bold/non-bold fragment
             const embedParts = Array.from(bp.matchAll(embedRegex));
             if (embedParts.length > 0) {
               const fragments: any[] = [];
@@ -99,10 +106,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 fragments
               );
             }
+
             return bpIndex % 2 === 1 ? (
-              <strong key={`${k}-bold-${pIndex}-${ipIndex}-${bpIndex}`}>
-                {bp}
-              </strong>
+              <strong key={`${k}-bold-${pIndex}-${ipIndex}-${bpIndex}`}>{bp}</strong>
             ) : (
               bp
             );
@@ -110,28 +116,37 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         });
       });
     };
+
     return handleMarkdown(txt, keyPrefix);
   };
 
+  /**
+   * renderContent:
+   * - detects table blocks defined between @& ... &@ and renders tables using
+   *   %R{row}$C{col} text% tokens.
+   * - outside table blocks: detects list blocks wrapped by # ... # (must be
+   *   bounded by start/newline and newline/end) and renders lists using ~ as
+   *   bullet separators. Everything else is treated as regular text and passed
+   *   through renderText for markdown handling.
+   */
   const renderContent = (content: string) => {
-    // Handle table regions between @& and &@
+    // Split into table vs non-table sections. Keep capturing group to preserve table content.
     const tableSections = content.split(/@&([\s\S]*?)&@/g);
 
     return tableSections.map((section, i) => {
+      // odd-index in the split = inside @& &@ table area
       if (i % 2 === 1) {
-        // Inside table
+        // parse table rows/cols in this section
         const tableRegex = /%R(\d+)\$C(\d+)\s+([^%]+)/g;
         const tableMatches = Array.from(section.matchAll(tableRegex));
-
         if (tableMatches.length === 0) return null;
 
         const tableData: Record<number, Record<number, string>> = {};
         let maxRow = 0;
         let maxCol = 0;
-
         for (const match of tableMatches) {
-          const row = parseInt(match[1]);
-          const col = parseInt(match[2]);
+          const row = parseInt(match[1], 10);
+          const col = parseInt(match[2], 10);
           const text = match[3].trim();
           if (!tableData[row]) tableData[row] = {};
           tableData[row][col] = text;
@@ -171,55 +186,66 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             </table>
           </div>
         );
-      } else {
-        // Normal content outside tables
-        const parts: React.ReactNode[] = [];
-        let lastIndex = 0;
-
-        // Updated bullet list syntax: starts with # and uses ~ for bullets
-        const bulletRegex = /#([\s\S]*?)#/g;
-        let match;
-
-        while ((match = bulletRegex.exec(section)) !== null) {
-          // Text before bullet list
-          if (match.index > lastIndex) {
-            const beforeText = section.slice(lastIndex, match.index);
-            parts.push(
-              <div key={`text-${i}-${lastIndex}`}>
-                {renderText(beforeText, `outside-${i}-${lastIndex}`)}
-              </div>
-            );
-          }
-
-          // Extract bullet items
-          const listContent = match[1]
-            .split(/\n|~/g)
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0);
-
-          parts.push(
-            <ul key={`list-${i}-${match.index}`} className="list-disc list-inside mb-2">
-              {listContent.map((item, idx) => (
-                <li key={`list-${i}-${idx}`}>{renderText(item, `list-${i}-${idx}`)}</li>
-              ))}
-            </ul>
-          );
-
-          lastIndex = match.index + match[0].length;
-        }
-
-        // Remaining text after last list
-        if (lastIndex < section.length) {
-          const remainingText = section.slice(lastIndex);
-          parts.push(
-            <div key={`text-${i}-end`}>
-              {renderText(remainingText, `outside-${i}-end`)}
-            </div>
-          );
-        }
-
-        return <div key={`section-${i}`}>{parts}</div>;
       }
+
+      // Outside tables: handle lists and normal text.
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+
+      // We'll find list blocks using a global regex, but validate boundaries manually.
+      const listBlockRegex = /#([\s\S]*?)#/g;
+      let match;
+      while ((match = listBlockRegex.exec(section)) !== null) {
+        const blockStart = match.index;
+        const blockEnd = match.index + match[0].length;
+
+        // Validate that '#' is at start or after newline, and closing '#' is at end or before newline.
+        const charBefore = blockStart > 0 ? section[blockStart - 1] : "\n";
+        const charAfter = blockEnd < section.length ? section[blockEnd] : "\n";
+        const validStart = charBefore === "\n" || blockStart === 0;
+        const validEnd = charAfter === "\n" || blockEnd === section.length;
+
+        if (!validStart || !validEnd) {
+          // Not a valid list block (e.g. inline #tag), skip this match
+          continue;
+        }
+
+        // push text before the list block
+        if (blockStart > lastIndex) {
+          const beforeText = section.slice(lastIndex, blockStart);
+          parts.push(
+            <div key={`text-${i}-${lastIndex}`}>{renderText(beforeText, `outside-${i}-${lastIndex}`)}</div>
+          );
+        }
+
+        // extract raw list content from inside the #'s
+        const listRaw = match[1] || "";
+        // split by ~ or newline, but keep items that contain non-whitespace
+        const items = listRaw
+          .split(/~|\n/g)
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        parts.push(
+          <ul key={`list-${i}-${blockStart}`} className="list-disc list-inside mb-2">
+            {items.map((item, idx) => (
+              <li key={`list-${i}-${blockStart}-li-${idx}`}>
+                {renderText(item, `list-${i}-${blockStart}-li-${idx}`)}
+              </li>
+            ))}
+          </ul>
+        );
+
+        lastIndex = blockEnd;
+      }
+
+      // push any remaining content after the last list block
+      if (lastIndex < section.length) {
+        const remaining = section.slice(lastIndex);
+        parts.push(<div key={`text-${i}-end`}>{renderText(remaining, `outside-${i}-end`)}</div>);
+      }
+
+      return <div key={`section-${i}`}>{parts}</div>;
     });
   };
 
@@ -240,38 +266,27 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         >
           {message.imageUrl && (
             <div className="mb-2">
-              <img
-                src={message.imageUrl}
-                alt="Uploaded"
-                className="max-w-full h-auto rounded-lg border"
-              />
+              <img src={message.imageUrl} alt="Uploaded" className="max-w-full h-auto rounded-lg border" />
             </div>
           )}
 
           {message.imageText && (
             <div className="mb-2 p-2 bg-muted rounded text-xs text-muted-foreground border-l-2 border-primary">
-              <span className="font-medium">Extracted text:</span>{" "}
-              {message.imageText}
+              <span className="font-medium">Extracted text:</span> {message.imageText}
             </div>
           )}
 
           <div
             className={`${
-              isUser
-                ? "not-prose text-white text-sm"
-                : "prose prose-sm max-w-none prose-gray dark:prose-invert"
+              isUser ? "not-prose text-white text-sm" : "prose prose-sm max-w-none prose-gray dark:prose-invert"
             }`}
           >
             {renderContent(message.content)}
           </div>
         </div>
 
-        <div
-          className={`flex ${isUser ? "justify-end" : "justify-start"} items-center mt-1 space-x-2`}
-        >
-          <span className="text-xs text-muted-foreground">
-            {formatTimestamp(message.createdAt)}
-          </span>
+        <div className={`flex ${isUser ? "justify-end" : "justify-start"} items-center mt-1 space-x-2`}>
+          <span className="text-xs text-muted-foreground">{formatTimestamp(message.createdAt)}</span>
 
           {!isUser && (
             <>
@@ -280,6 +295,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 size="sm"
                 className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
                 onClick={handleCopy}
+                data-testid={`button-copy-${message.id}`}
               >
                 {copied ? (
                   <>
@@ -293,27 +309,27 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                   </>
                 )}
               </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
                 className={`h-6 px-2 text-xs ${
-                  liked === true
-                    ? "text-green-600 hover:text-green-700"
-                    : "text-muted-foreground hover:text-foreground"
+                  liked === true ? "text-green-600 hover:text-green-700" : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => handleLike(true)}
+                data-testid={`button-like-${message.id}`}
               >
                 <ThumbsUp className="h-3 w-3" />
               </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
                 className={`h-6 px-2 text-xs ${
-                  liked === false
-                    ? "text-red-600 hover:text-red-700"
-                    : "text-muted-foreground hover:text-foreground"
+                  liked === false ? "text-red-600 hover:text-red-700" : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => handleLike(false)}
+                data-testid={`button-dislike-${message.id}`}
               >
                 <ThumbsDown className="h-3 w-3" />
               </Button>
