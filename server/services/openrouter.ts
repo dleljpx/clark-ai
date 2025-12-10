@@ -37,7 +37,26 @@ export async function generateChatResponse(messages: ChatMessage[], isFirstMessa
       throw new Error("No messages provided to generate response.");
     }
 
-    const openrouterMessages = messages
+    // If there's image data, extract text from it using Vision API
+    let enhancedMessages = [...messages];
+    if (imageData) {
+      try {
+        const { extractTextFromImage } = await import('./vision');
+        const imageText = await extractTextFromImage(imageData.base64);
+        
+        // Add image description to the last user message
+        if (enhancedMessages.length > 0) {
+          const lastMessage = enhancedMessages[enhancedMessages.length - 1];
+          if (lastMessage.role === 'user') {
+            lastMessage.content = `${lastMessage.content}\n\n[Image content: ${imageText}]`;
+          }
+        }
+      } catch (visionError) {
+        // If vision fails, continue without image text
+      }
+    }
+
+    const openrouterMessages = enhancedMessages
       .filter(msg => msg.role !== 'system')
       .map(msg => ({
         role: msg.role as 'user' | 'assistant',
