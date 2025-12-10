@@ -54,7 +54,7 @@ export async function generateChatResponse(messages: ChatMessage[], isFirstMessa
     const instructions = isFirstMessage ? activeInstructions + TITLE_INSTRUCTION_SUFFIX : activeInstructions;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.1-70b-versatile",
+      model: "llama-3.2-90b-vision-preview",
       messages: [
         {
           role: 'system',
@@ -107,7 +107,7 @@ export async function generateConversationTitle(firstMessage: string): Promise<s
     const prompt = `Generate a short, descriptive title (3-6 words) for a conversation that starts with this message: "${firstMessage}". The title should capture the main topic or question. Return only the title, nothing else. Do not use quotes around the title.`;
 
     const response = await groq.chat.completions.create({
-      model: "llama-3.1-70b-versatile",
+      model: "llama-3.2-90b-vision-preview",
       messages: [
         {
           role: 'user',
