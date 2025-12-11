@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
 import { generateChatResponse, generateConversationTitle, extractTitleFromResponse, setSystemInstructions, getSystemInstructions } from "./services/openrouter";
-import { extractTextFromImage } from "./services/vision";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get conversations for current user
