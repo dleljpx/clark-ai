@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, User, Settings, Trash2, X, MessageSquare } from "lucide-react";
 import ThemeDialog from "./theme-dialog";
 import ConversationMenu from "./conversation-menu";
@@ -42,6 +43,11 @@ export default function ChatSidebar({
       const days = Math.floor(diffInHours / 24);
       return `${days} days ago`;
     }
+  };
+
+  const truncateTitle = (title: string, maxLength: number = 30) => {
+    if (title.length <= maxLength) return { truncated: title, isTruncated: false };
+    return { truncated: title.substring(0, maxLength) + '...', isTruncated: true, full: title };
   };
 
   const handleConversationClick = (id: string) => {
@@ -87,46 +93,60 @@ export default function ChatSidebar({
               <p className="text-xs text-muted-foreground">Start a new chat to begin</p>
             </div>
           ) : (
-            conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className={`
-                  group p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors
-                  ${currentConversationId === conversation.id ? 'border-l-2 border-primary bg-accent' : ''}
-                `}
-                onClick={() => handleConversationClick(conversation.id)}
-                data-testid={`conversation-item-${conversation.id}`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-foreground truncate">
-                      {conversation.title}
-                    </h3>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimestamp(conversation.updatedAt || conversation.createdAt)}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <ConversationMenu 
-                      conversationId={conversation.id}
-                      systemInstructions={conversation.systemInstructions}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteConversation(conversation.id);
-                      }}
-                      data-testid={`button-delete-conversation-${conversation.id}`}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
+            conversations.map((conversation) => {
+              const { truncated, isTruncated, full } = truncateTitle(conversation.title);
+              
+              return (
+                <TooltipProvider key={conversation.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`
+                          group p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors
+                          ${currentConversationId === conversation.id ? 'border-l-2 border-primary bg-accent' : ''}
+                        `}
+                        onClick={() => handleConversationClick(conversation.id)}
+                        data-testid={`conversation-item-${conversation.id}`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm text-foreground truncate">
+                              {truncated}
+                            </h3>
+                            <span className="text-xs text-muted-foreground">
+                              {formatTimestamp(conversation.updatedAt || conversation.createdAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <ConversationMenu 
+                              conversationId={conversation.id}
+                              systemInstructions={conversation.systemInstructions}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteConversation(conversation.id);
+                              }}
+                              data-testid={`button-delete-conversation-${conversation.id}`}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    {isTruncated && (
+                      <TooltipContent side="right" className="max-w-xs break-words">
+                        {full}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })
           )}
         </div>
       </ScrollArea>

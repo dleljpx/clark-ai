@@ -35,29 +35,49 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
     setShowCharCount(message.length > maxLength * 0.8);
   }, [message]);
 
+  const processImage = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      alert("Image too large. Please select an image under 5MB.");
+      return;
+    }
+    
+    // Only allow specific image types
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please select a JPEG, PNG, or WebP image.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      const base64Data = base64.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+      setSelectedImage({ base64: base64Data, mimeType: file.type });
+      setImagePreview(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert("Image too large. Please select an image under 5MB.");
-        return;
-      }
-      
-      // Only allow specific image types
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        alert("Please select a JPEG, PNG, or WebP image.");
-        return;
-      }
+      processImage(file);
+    }
+  };
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        const base64Data = base64.split(',')[1]; // Remove data:image/jpeg;base64, prefix
-        setSelectedImage({ base64: base64Data, mimeType: file.type });
-        setImagePreview(base64);
-      };
-      reader.readAsDataURL(file);
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = event.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+          event.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) {
+            processImage(file);
+          }
+          break;
+        }
+      }
     }
   };
 
@@ -164,6 +184,7 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder="Type your message here..."
             className="min-h-[40px] max-h-32 resize-none pr-12"
             disabled={disabled}
