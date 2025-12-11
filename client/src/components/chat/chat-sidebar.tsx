@@ -44,6 +44,11 @@ export default function ChatSidebar({
     }
   };
 
+  const truncateTitle = (title: string, maxLength: number = 30) => {
+    if (title.length <= maxLength) return title;
+    return title.substring(0, maxLength) + '...';
+  };
+
   const handleConversationClick = (id: string) => {
     window.location.href = `/chat/${id}`;
   };
@@ -100,7 +105,7 @@ export default function ChatSidebar({
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm text-foreground truncate" title={conversation.title}>
-                      {conversation.title}
+                      {truncateTitle(conversation.title)}
                     </h3>
                     <span className="text-xs text-muted-foreground">
                       {formatTimestamp(conversation.updatedAt || conversation.createdAt)}
