@@ -6,7 +6,7 @@ if (!API_KEY) {
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
 }
 
 const DEFAULT_SYSTEM_INSTRUCTIONS = `You are CLARK AI, a helpful and intelligent assistant. You provide accurate, helpful responses while being friendly and professional. You can help with a wide variety of tasks including answering questions, creative writing, analysis, and more. Your creator is Lex Montes. Your responses must have a maximum of 650 characters.`; 
@@ -43,27 +43,33 @@ export async function generateChatResponse(
       throw new Error("No messages provided to generate response.");
     }
 
-    // If there's image data, extract description first using Vision API
-    let enhancedMessages = [...messages];
-    if (imageData) {
-      const { extractTextFromImage } = await import('./vision');
-      const imageDescription = await extractTextFromImage(imageData.base64);
-      
-      // Replace the last user message content with image description
-      if (enhancedMessages.length > 0) {
-        const lastMessage = enhancedMessages[enhancedMessages.length - 1];
-        if (lastMessage.role === 'user') {
-          lastMessage.content = `User sent an image. Here's what's in it: ${imageDescription}\n\nUser's message: ${lastMessage.content}`;
-        }
-      }
-    }
-
-    const openrouterMessages = enhancedMessages
+    // Process messages with image support for GPT-4 Vision
+    let openrouterMessages = messages
       .filter(msg => msg.role !== 'system')
       .map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));
+
+    // If there's image data, add it to the last user message
+    if (imageData && openrouterMessages.length > 0) {
+      const lastMessage = openrouterMessages[openrouterMessages.length - 1];
+      const lastInputMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'user' && typeof lastInputMessage.content === 'string') {
+        lastMessage.content = [
+          {
+            type: 'text',
+            text: lastInputMessage.content
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:${imageData.mimeType};base64,${imageData.base64}`
+            }
+          }
+        ];
+      }
+    }
 
     const activeInstructions = conversationInstructions || systemInstructions;
     const instructions = isFirstMessage ? activeInstructions + TITLE_INSTRUCTION_SUFFIX : activeInstructions;
@@ -77,7 +83,7 @@ export async function generateChatResponse(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-3.5-turbo',
+        model: 'openai/gpt-4-vision',
         messages: [
           {
             role: 'system',
@@ -99,9 +105,9 @@ export async function generateChatResponse(
     return data.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error: any) {
     if (!API_KEY) {
-      throw new Error("CLARK API key is not configured. Please set OPENROUTER_API_KEY environment variable. Get your key from: https://openrouter.ai/keys");
+      throw new Error("CLARK is not configured correctly. Please check over the ENV VAR's in galaxy cloud.");
     } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-      throw new Error("Invalid or expired API key. Please verify your CLARK API key is correct. Get a new key from: https://openrouter.ai/keys");
+      throw new Error("CLARK is not configured correctly. Please check over the ENV VAR's in galaxy cloud.");
     } else if (error.message?.includes('429') || error.message?.includes('rate_limit')) {
       throw new Error("Rate limit exceeded. The CLARK service is temporarily busy. Please try again in a moment.");
     } else if (error.message?.includes('500')) {
