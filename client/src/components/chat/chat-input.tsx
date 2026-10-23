@@ -168,6 +168,7 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
           size="sm"
           className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent"
           title="Upload image"
+          data-tour="image-upload"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
           data-testid="button-upload-image"
@@ -185,6 +186,7 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
             placeholder="Type your message here..."
             className="min-h-[40px] max-h-32 resize-none pr-12"
             disabled={disabled}
+            data-tour="message-input"
             data-testid="input-message"
           />
           
@@ -208,7 +210,7 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
       </form>
       
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2 mt-3">
+      <div className="flex flex-wrap gap-2 mt-3" data-tour="quick-actions">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (

@@ -1,10 +1,88 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
 import { generateChatResponse, generateConversationTitle, extractTitleFromResponse, setSystemInstructions, getSystemInstructions } from "./services/openrouter";
+import { getRecentLogs } from "./vite";
+
+const ADMIN_TOKEN_TTL_MS = 15 * 60 * 1000;
+const MAX_ADMIN_LOGIN_ATTEMPTS = 5;
+const ADMIN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+let adminLoginFailures = { count: 0, resetAt: 0 };
+
+function passwordMatches(provided: string, expected: string) {
+  const providedBytes = Buffer.from(provided);
+  const expectedBytes = Buffer.from(expected);
+  if (providedBytes.length !== expectedBytes.length) {
+    timingSafeEqual(expectedBytes, expectedBytes);
+    return false;
+  }
+  return timingSafeEqual(providedBytes, expectedBytes);
+}
+
+function createAdminToken(secret: string) {
+  const payload = Buffer.from(JSON.stringify({
+    expiresAt: Date.now() + ADMIN_TOKEN_TTL_MS,
+    nonce: randomBytes(16).toString("hex"),
+  })).toString("base64url");
+  const signature = createHmac("sha256", secret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function getValidAdminToken(authorization: string | undefined, secret: string | undefined) {
+  if (!authorization?.startsWith("Bearer ")) return undefined;
+  if (!secret) return undefined;
+
+  const [payload, signature, extra] = authorization.slice(7).split(".");
+  if (!payload || !signature || extra) return undefined;
+
+  const expectedSignature = createHmac("sha256", secret).update(payload).digest();
+  const providedSignature = Buffer.from(signature, "base64url");
+  if (providedSignature.length !== expectedSignature.length || !timingSafeEqual(providedSignature, expectedSignature)) {
+    return undefined;
+  }
+
+  try {
+    const tokenData = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (typeof tokenData.expiresAt !== "number" || tokenData.expiresAt <= Date.now()) return undefined;
+    return tokenData;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.post("/api/admin/access", (req, res) => {
+    const expectedPassword = process.env.ADMIN_PANEL_PASSWORD;
+    if (!expectedPassword) {
+      return res.status(503).json({ error: "Admin panel is not configured. Set ADMIN_PANEL_PASSWORD in Galaxy." });
+    }
+
+    const now = Date.now();
+    if (now >= adminLoginFailures.resetAt) adminLoginFailures = { count: 0, resetAt: now + ADMIN_LOGIN_WINDOW_MS };
+    if (adminLoginFailures.count >= MAX_ADMIN_LOGIN_ATTEMPTS) {
+      return res.status(429).json({ error: "Too many attempts. Try again in 15 minutes." });
+    }
+
+    const providedPassword = typeof req.body?.password === "string" ? req.body.password : "";
+    if (providedPassword.length > 256 || !passwordMatches(providedPassword, expectedPassword)) {
+      adminLoginFailures.count += 1;
+      return res.status(401).json({ error: "Incorrect admin password." });
+    }
+
+    adminLoginFailures = { count: 0, resetAt: 0 };
+    const token = createAdminToken(expectedPassword);
+    res.json({ token, expiresInSeconds: ADMIN_TOKEN_TTL_MS / 1000 });
+  });
+
+  app.get("/api/admin/logs", (req, res) => {
+    if (!getValidAdminToken(req.get("authorization"), process.env.ADMIN_PANEL_PASSWORD)) {
+      return res.status(401).json({ error: "Admin access expired. Authenticate again." });
+    }
+    res.json({ status: "running", uptimeSeconds: Math.floor(process.uptime()), logs: getRecentLogs() });
+  });
+
   // Get conversations for current user
   app.get("/api/conversations", async (req, res) => {
     try {

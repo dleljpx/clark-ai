@@ -7,6 +7,12 @@ import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
+const recentLogLines: string[] = [];
+const MAX_RECENT_LOG_LINES = 150;
+
+export function getRecentLogs() {
+  return [...recentLogLines];
+}
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -16,7 +22,10 @@ export function log(message: string, source = "express") {
     hour12: true,
   });
 
-  console.log(`${formattedTime} [${source}] ${message}`);
+  const line = `${formattedTime} [${source}] ${message}`;
+  recentLogLines.push(line);
+  if (recentLogLines.length > MAX_RECENT_LOG_LINES) recentLogLines.shift();
+  console.log(line);
 }
 
 export async function setupVite(app: Express, server: Server) {

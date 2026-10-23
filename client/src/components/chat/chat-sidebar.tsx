@@ -13,6 +13,7 @@ interface ChatSidebarProps {
   onCloseSidebar: () => void;
   isCreatingConversation: boolean;
   isMobile: boolean;
+  onReplayTutorial: () => void;
   displayName: string;
 }
 
@@ -24,6 +25,7 @@ export default function ChatSidebar({
   onCloseSidebar,
   isCreatingConversation,
   isMobile,
+  onReplayTutorial,
   displayName
 }: ChatSidebarProps) {
   
@@ -77,6 +79,7 @@ export default function ChatSidebar({
           onClick={onNewChat}
           disabled={isCreatingConversation}
           className="w-full mt-3 bg-primary text-primary-foreground hover:bg-primary/90"
+          data-tour="new-chat"
           data-testid="button-new-chat"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -86,7 +89,7 @@ export default function ChatSidebar({
 
       {/* Conversations List */}
       <ScrollArea className="flex-1 p-2">
-        <div className="space-y-1">
+        <div className="space-y-1" data-tour="conversation-list">
           {conversations.length === 0 ? (
             <div className="text-center py-8">
               <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
@@ -147,7 +150,7 @@ export default function ChatSidebar({
           <div className="flex-1">
             <p className="text-sm font-medium text-foreground">{displayName}</p>
           </div>
-          <ThemeDialog />
+          <ThemeDialog onReplayTutorial={onReplayTutorial} />
         </div>
       </div>
     </>

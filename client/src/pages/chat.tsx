@@ -216,6 +216,7 @@ export default function ChatPage() {
           isCreatingConversation={createConversationMutation.isPending}
           isMobile={isMobile}
           displayName={displayName}
+          onReplayTutorial={() => setTutorialOpen(true)}
         />
       </div>
 
@@ -256,36 +257,38 @@ export default function ChatPage() {
           
           <div className="flex items-center space-x-2">
             <SystemInstructionsDialog conversationId={conversationId} />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearChat}
-              disabled={!conversationId || messages.length === 0 || clearConversationMutation.isPending}
-              title="Clear Chat"
-              data-testid="button-clear-chat"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShareChat}
-              disabled={!conversationId}
-              title="Share Chat"
-              data-testid="button-share-chat"
-            >
-              <Share className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleExportChat}
-              disabled={!conversationId || messages.length === 0}
-              title="Export Chat"
-              data-testid="button-export-chat"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center space-x-2" data-tour="chat-actions">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearChat}
+                disabled={!conversationId || messages.length === 0 || clearConversationMutation.isPending}
+                title="Clear Chat"
+                data-testid="button-clear-chat"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleShareChat}
+                disabled={!conversationId}
+                title="Share Chat"
+                data-testid="button-share-chat"
+              >
+                <Share className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExportChat}
+                disabled={!conversationId || messages.length === 0}
+                title="Export Chat"
+                data-testid="button-export-chat"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -307,6 +310,9 @@ export default function ChatPage() {
 
       <OnboardingDialog
         open={tutorialOpen}
+        initialName={displayName === "User" ? "" : displayName}
+        isMobile={isMobile}
+        onMobileSidebarChange={setSidebarOpen}
         onOpenChange={setTutorialOpen}
         onComplete={handleOnboardingComplete}
       />

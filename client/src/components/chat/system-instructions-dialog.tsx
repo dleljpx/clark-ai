@@ -95,6 +95,7 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
           size="sm"
           className={className}
           title="System Instructions"
+          data-tour="system-instructions"
           data-testid="button-system-instructions"
           onClick={(e) => {
             e.preventDefault();
