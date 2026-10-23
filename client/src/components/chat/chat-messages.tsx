@@ -50,8 +50,8 @@ export default function ChatMessages({
                 Welcome to CLARK AI
               </h3>
               <p className="text-muted-foreground text-sm">
-                I'm CLARK AI, your intelligent assistant ready to help with questions, coding, creative tasks, and more. 
-                How can I assist you today?
+                Hello I'm CLARK! You're personal helper friend.
+                Ask me anything!
               </p>
             </div>
           </div>
