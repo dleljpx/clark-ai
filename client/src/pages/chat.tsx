@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import ChatMessages from "@/components/chat/chat-messages";
-import ChatInput from "@/components/chat/chat-input";
+import ChatInput, { type ChatMode } from "@/components/chat/chat-input";
 import OnboardingDialog from "@/components/chat/onboarding-dialog";
 import SystemInstructionsDialog from "@/components/chat/system-instructions-dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(() => localStorage.getItem("clark-tutorial-complete") !== "true");
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("clark-user-name") || "User");
+  const [chatMode, setChatMode] = useState<ChatMode>(() => localStorage.getItem("clark-chat-mode") === "chat" ? "chat" : "work");
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -91,8 +92,8 @@ export default function ChatPage() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ conversationId, content, imageData }: { conversationId: string; content: string; imageData?: { base64: string; mimeType: string } }) => {
-      const payload: any = { content };
+    mutationFn: async ({ conversationId, content, imageData, mode }: { conversationId: string; content: string; imageData?: { base64: string; mimeType: string }; mode: ChatMode }) => {
+      const payload: any = { content, mode };
       if (imageData) {
         payload.imageBase64 = imageData.base64;
         payload.imageMimeType = imageData.mimeType;
@@ -134,14 +135,19 @@ export default function ChatPage() {
     }
   };
 
-  const handleSendMessage = async (content: string, imageData?: { base64: string; mimeType: string }) => {
+  const handleSendMessage = async (content: string, imageData?: { base64: string; mimeType: string }, mode: ChatMode = chatMode) => {
     if (!conversationId) {
       // Create new conversation first
       createConversationMutation.mutate("New Conversation");
       return;
     }
 
-    sendMessageMutation.mutate({ conversationId, content, imageData });
+    sendMessageMutation.mutate({ conversationId, content, imageData, mode });
+  };
+
+  const handleModeChange = (mode: ChatMode) => {
+    setChatMode(mode);
+    localStorage.setItem("clark-chat-mode", mode);
   };
 
   const handleShareChat = () => {
@@ -303,6 +309,8 @@ export default function ChatPage() {
         {/* Input */}
         <ChatInput
           onSendMessage={handleSendMessage}
+          mode={chatMode}
+          onModeChange={handleModeChange}
           disabled={sendMessageMutation.isPending}
           isGenerating={sendMessageMutation.isPending}
         />

@@ -145,6 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id: conversationId } = req.params;
       const { content, imageBase64, imageMimeType } = req.body;
+      const mode = req.body.mode === "chat" ? "chat" : "work";
 
       // Validate request
       if (!content?.trim() && !imageBase64) {
@@ -213,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Generate AI response using conversation-specific system instructions
         const imageData = imageBase64 ? { base64: imageBase64, mimeType: imageMimeType! } : undefined;
-        const aiResponse = await generateChatResponse(chatHistory, isFirstMessage, conversation.systemInstructions, imageData);
+        const aiResponse = await generateChatResponse(chatHistory, isFirstMessage, conversation.systemInstructions, imageData, mode);
         
         let finalAiResponse = aiResponse;
         
@@ -231,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             // Fallback to old method if no title was found in response
             try {
-              const fallbackTitle = await generateConversationTitle(content);
+              const fallbackTitle = await generateConversationTitle(content, mode);
               await storage.updateConversationTitle(conversationId, fallbackTitle);
             } catch (titleError) {
               // Title generation failed, continue anyway

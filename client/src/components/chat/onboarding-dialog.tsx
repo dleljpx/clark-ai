@@ -58,6 +58,13 @@ const tutorialSteps = [
     area: "chat",
   },
   {
+    title: "Choose a mode",
+    description: "Chat uses OpenRouter's free-model router for everyday questions. Work keeps using DeepSeek V4.1 Flash for the current work-focused behavior.",
+    icon: MessageSquare,
+    target: "chat-mode",
+    area: "chat",
+  },
+  {
     title: "Attach an image",
     description: "Choose an image to attach it to your message. You can also paste an image directly into the message field.",
     icon: ImagePlus,

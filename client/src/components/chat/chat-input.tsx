@@ -1,15 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, Lightbulb, Code, Brain, FileText, Image, X } from "lucide-react";
+import { Send, Lightbulb, Code, Brain, FileText, Image, X, MessageSquare, Briefcase } from "lucide-react";
+
+export type ChatMode = "chat" | "work";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, imageData?: { base64: string; mimeType: string }) => void;
+  onSendMessage: (message: string, imageData?: { base64: string; mimeType: string }, mode?: ChatMode) => void;
+  mode: ChatMode;
+  onModeChange: (mode: ChatMode) => void;
   disabled: boolean;
   isGenerating: boolean;
 }
 
-export default function ChatInput({ onSendMessage, disabled, isGenerating }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, mode, onModeChange, disabled, isGenerating }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [showCharCount, setShowCharCount] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ base64: string; mimeType: string } | null>(null);
@@ -89,7 +93,7 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (canSend) {
-      onSendMessage(message.trim(), selectedImage || undefined);
+      onSendMessage(message.trim(), selectedImage || undefined, mode);
       setMessage("");
       removeImage();
     }
@@ -152,6 +156,38 @@ export default function ChatInput({ onSendMessage, disabled, isGenerating }: Cha
           </Button>
         </div>
       )}
+
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="inline-flex items-center rounded-md border bg-muted/60 p-1" role="group" aria-label="Response mode" data-tour="chat-mode">
+          <button
+            type="button"
+            onClick={() => onModeChange("chat")}
+            disabled={disabled}
+            aria-pressed={mode === "chat"}
+            title="Use OpenRouter's free model router"
+            className={`inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium transition-colors ${mode === "chat" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            data-testid="button-mode-chat"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => onModeChange("work")}
+            disabled={disabled}
+            aria-pressed={mode === "work"}
+            title="Use DeepSeek V4.1 Flash"
+            className={`inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium transition-colors ${mode === "work" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            data-testid="button-mode-work"
+          >
+            <Briefcase className="h-4 w-4" />
+            Work
+          </button>
+        </div>
+        <span className="hidden text-xs text-muted-foreground sm:block">
+          {mode === "chat" ? "Free model" : "DeepSeek V4.1 Flash"}
+        </span>
+      </div>
       
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
         <input

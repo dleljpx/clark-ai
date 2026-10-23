@@ -32,7 +32,8 @@ export async function generateChatResponse(
   messages: ChatMessage[],
   isFirstMessage: boolean = false,
   conversationInstructions?: string,
-  imageData?: { base64: string; mimeType: string }
+  imageData?: { base64: string; mimeType: string },
+  mode: 'chat' | 'work' = 'work'
 ): Promise<string> {
   try {
     if (!API_KEY) {
@@ -83,7 +84,7 @@ export async function generateChatResponse(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-v4.1-flash',
+        model: mode === 'chat' ? 'openrouter/free' : 'deepseek/deepseek-v4.1-flash',
         messages: [
           {
             role: 'system',
@@ -130,7 +131,7 @@ export function extractTitleFromResponse(response: string) {
   return { title: null, cleanedResponse: response };
 }
 
-export async function generateConversationTitle(firstMessage: string) {
+export async function generateConversationTitle(firstMessage: string, mode: 'chat' | 'work' = 'work') {
   try {
     if (!API_KEY) {
       const words = firstMessage.split(' ').slice(0, 4);
@@ -148,7 +149,7 @@ export async function generateConversationTitle(firstMessage: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-v4.1-flash',
+        model: mode === 'chat' ? 'openrouter/free' : 'deepseek/deepseek-v4.1-flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 20,
