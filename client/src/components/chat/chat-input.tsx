@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Lightbulb, Code, Brain, FileText, Image, X, MessageSquare, Briefcase } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Send, Lightbulb, Code, Brain, FileText, Image, X, MessageSquare, Briefcase, ChevronDown, Check } from "lucide-react";
 
 export type ChatMode = "chat" | "work";
 
@@ -16,6 +17,7 @@ interface ChatInputProps {
 export default function ChatInput({ onSendMessage, mode, onModeChange, disabled, isGenerating }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [showCharCount, setShowCharCount] = useState(false);
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ base64: string; mimeType: string } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -36,6 +38,25 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
   useEffect(() => {
     setShowCharCount(message.length > maxLength * 0.8);
   }, [message]);
+
+  useEffect(() => {
+    const focusComposerOnCharacter = (event: KeyboardEvent) => {
+      if (disabled || modeMenuOpen || event.defaultPrevented || event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      if (event.target instanceof HTMLElement && (
+        event.target.isContentEditable ||
+        event.target.closest("input, textarea, select, [role='menuitem']")
+      )) return;
+      if (document.activeElement === textareaRef.current) return;
+
+      event.preventDefault();
+      setMessage((current) => current + event.key);
+      textareaRef.current?.focus();
+    };
+
+    document.addEventListener("keydown", focusComposerOnCharacter);
+    return () => document.removeEventListener("keydown", focusComposerOnCharacter);
+  }, [disabled, modeMenuOpen]);
 
   const processImage = (file: File) => {
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -157,38 +178,26 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
         </div>
       )}
 
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="inline-flex items-center rounded-md border bg-muted/60 p-1" role="group" aria-label="Response mode" data-tour="chat-mode">
-          <button
-            type="button"
-            onClick={() => onModeChange("chat")}
-            disabled={disabled}
-            aria-pressed={mode === "chat"}
-            title="Use OpenRouter's free model router"
-            className={`inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium transition-colors ${mode === "chat" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            data-testid="button-mode-chat"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Chat
-          </button>
-          <button
-            type="button"
-            onClick={() => onModeChange("work")}
-            disabled={disabled}
-            aria-pressed={mode === "work"}
-            title="Use DeepSeek V4.1 Flash"
-            className={`inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium transition-colors ${mode === "work" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            data-testid="button-mode-work"
-          >
-            <Briefcase className="h-4 w-4" />
-            Work
-          </button>
-        </div>
-        <span className="hidden text-xs text-muted-foreground sm:block">
-          {mode === "chat" ? "Free model" : "DeepSeek V4.1 Flash"}
-        </span>
+      <div className="mb-3 flex flex-wrap gap-2" data-tour="quick-actions">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Button
+              key={action.label}
+              variant="secondary"
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => handleQuickAction(action.prompt)}
+              disabled={disabled}
+              data-testid={`button-quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              <Icon className="h-3 w-3 mr-1" />
+              {action.label}
+            </Button>
+          );
+        })}
       </div>
-      
+
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
         <input
           ref={fileInputRef}
@@ -245,30 +254,56 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
         </Button>
       </form>
       
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2 mt-3" data-tour="quick-actions">
-        {quickActions.map((action) => {
-          const Icon = action.icon;
-          return (
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">AI can make mistakes. Check important information.</p>
+        <Popover open={modeMenuOpen} onOpenChange={setModeMenuOpen}>
+          <PopoverTrigger asChild>
             <Button
-              key={action.label}
-              variant="secondary"
+              type="button"
+              variant="outline"
               size="sm"
-              className="text-xs h-7"
-              onClick={() => handleQuickAction(action.prompt)}
-              disabled={disabled}
-              data-testid={`button-quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
+              className="h-8 shrink-0 gap-2 px-3"
+              title="Choose chat mode"
+              aria-label={`Current mode: ${mode === "chat" ? "Chat" : "Work"}`}
+              data-tour="chat-mode"
+              data-testid="button-chat-mode"
             >
-              <Icon className="h-3 w-3 mr-1" />
-              {action.label}
+              {mode === "chat" ? <MessageSquare className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
+              {mode === "chat" ? "Chat" : "Work"}
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>
-          );
-        })}
+          </PopoverTrigger>
+          <PopoverContent align="end" side="top" sideOffset={8} className="w-64 p-1">
+            {([
+              { value: "chat" as const, label: "Chat", description: "Everyday conversations", icon: MessageSquare },
+              { value: "work" as const, label: "Work", description: "Focused tasks and projects", icon: Briefcase },
+            ]).map((option) => {
+              const Icon = option.icon;
+              const selected = mode === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onModeChange(option.value);
+                    setModeMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent ${selected ? "bg-accent/70" : ""}`}
+                  aria-pressed={selected}
+                  data-testid={`button-mode-${option.value}`}
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{option.label}</span>
+                    <span className="block text-xs text-muted-foreground">{option.description}</span>
+                  </span>
+                  {selected && <Check className="h-4 w-4 text-primary" />}
+                </button>
+              );
+            })}
+          </PopoverContent>
+        </Popover>
       </div>
-      
-      <p className="text-xs text-muted-foreground mt-2 text-center">
-        AI can make mistakes. Check important information.
-      </p>
     </div>
   );
 }

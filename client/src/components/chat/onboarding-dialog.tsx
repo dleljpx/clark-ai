@@ -59,7 +59,7 @@ const tutorialSteps = [
   },
   {
     title: "Choose a mode",
-    description: "Chat uses OpenRouter's free-model router for everyday questions. Work keeps using DeepSeek V4.1 Flash for the current work-focused behavior.",
+    description: "Chat is for everyday conversations. Work is for more focused tasks and projects. Your choice is saved on this device.",
     icon: MessageSquare,
     target: "chat-mode",
     area: "chat",

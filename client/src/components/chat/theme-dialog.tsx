@@ -182,6 +182,19 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
                 <KeyRound className="mr-2 h-4 w-4" /> Access
               </Button>
             </div>
+            <Separator />
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <div className="flex items-center gap-3">
+                <Play className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Getting started</p>
+                  <p className="text-xs text-muted-foreground">Replay the guided tour</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={replayTutorial}>
+                Replay
+              </Button>
+            </div>
           </>
         )}
 
@@ -235,9 +248,6 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
                 <span className="text-muted-foreground">{adminData ? `Uptime ${formatUptime(adminData.uptimeSeconds)}` : "Checking status..."}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={replayTutorial}>
-                  <Play className="mr-2 h-4 w-4" /> Replay tutorial
-                </Button>
                 <Button variant="ghost" size="icon" onClick={() => void refreshAdmin()} disabled={isRefreshing} title="Refresh logs" aria-label="Refresh logs">
                   <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 </Button>
