@@ -250,7 +250,7 @@ export default function ChatPage() {
                 <Bot className="h-4 w-4 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">CLARK 2</h2>
+                <h2 className="font-semibold text-foreground">CLARK</h2>
               </div>
             </div>
           </div>

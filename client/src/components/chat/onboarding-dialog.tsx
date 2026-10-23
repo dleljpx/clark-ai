@@ -205,7 +205,7 @@ export default function OnboardingDialog({
 
         <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
           {isNameStep
-            ? "Your name will appear in the sidebar on this device."
+            ? "Your name will appear in the sidebar."
             : currentStep.description}
         </p>
 

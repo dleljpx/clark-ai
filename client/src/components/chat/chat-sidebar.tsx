@@ -62,7 +62,7 @@ export default function ChatSidebar({
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-foreground">CLARK 2</h1>
+          <h1 className="text-lg font-semibold text-foreground">CLARK</h1>
           {isMobile && (
             <Button
               variant="ghost"
