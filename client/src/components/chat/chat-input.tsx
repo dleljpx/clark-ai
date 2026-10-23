@@ -261,18 +261,18 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 shrink-0 gap-2 px-3"
+              className="h-7 shrink-0 gap-1.5 px-2.5"
               title="Choose chat mode"
               aria-label={`Current mode: ${mode === "chat" ? "Chat" : "Work"}`}
               data-tour="chat-mode"
               data-testid="button-chat-mode"
             >
-              {mode === "chat" ? <MessageSquare className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
+              {mode === "chat" ? <MessageSquare className="h-3.5 w-3.5" /> : <Briefcase className="h-3.5 w-3.5" />}
               {mode === "chat" ? "Chat" : "Work"}
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" side="top" sideOffset={8} className="w-64 p-1">
+          <PopoverContent align="end" side="top" sideOffset={8} className="w-40 p-1">
             {([
               { value: "chat" as const, label: "Chat", tooltip: "For everyday conversations", icon: MessageSquare },
               { value: "work" as const, label: "Work", tooltip: "For focused tasks and projects", icon: Briefcase },
@@ -287,16 +287,16 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
                     onModeChange(option.value);
                     setModeMenuOpen(false);
                   }}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent ${selected ? "bg-accent/70" : ""}`}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent ${selected ? "bg-accent/70" : ""}`}
                   aria-pressed={selected}
                   title={option.tooltip}
                   data-testid={`button-mode-${option.value}`}
                 >
-                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">{option.label}</span>
                   </span>
-                  {selected && <Check className="h-4 w-4 text-primary" />}
+                  {selected && <Check className="h-3.5 w-3.5 text-primary" />}
                 </button>
               );
             })}
