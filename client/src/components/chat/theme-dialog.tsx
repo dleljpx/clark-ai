@@ -174,8 +174,7 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
               <div className="flex items-center gap-3">
                 <Play className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium">Getting started</p>
-                  <p className="text-xs text-muted-foreground">Replay the guided tour</p>
+                  <p className="text-sm font-medium">Replay tutorial</p>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={replayTutorial}>
@@ -188,7 +187,6 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
                 <ShieldCheck className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Admin panel</p>
-                  <p className="text-xs text-muted-foreground">Protected app tools</p>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={() => setView("access")}>

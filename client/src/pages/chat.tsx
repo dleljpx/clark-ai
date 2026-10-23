@@ -101,8 +101,8 @@ export default function ChatPage() {
       const response = await apiRequest("POST", `/api/conversations/${conversationId}/messages`, payload);
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations", variables.conversationId] });
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
     },
     onError: (error: any) => {
@@ -137,8 +137,25 @@ export default function ChatPage() {
 
   const handleSendMessage = async (content: string, imageData?: { base64: string; mimeType: string }, mode: ChatMode = chatMode) => {
     if (!conversationId) {
-      // Create new conversation first
-      createConversationMutation.mutate("New Conversation");
+      let newConversation: Conversation;
+      try {
+        const response = await apiRequest("POST", "/api/conversations", { title: "New Conversation" });
+        newConversation = await response.json();
+      } catch {
+        toast({
+          title: "Error",
+          description: "Failed to create new conversation",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        await sendMessageMutation.mutateAsync({ conversationId: newConversation.id, content, imageData, mode });
+      } catch {
+        // The server may have saved the message even if AI generation failed.
+      }
+      window.location.href = `/chat/${newConversation.id}`;
       return;
     }
 
