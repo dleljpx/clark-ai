@@ -255,7 +255,6 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
       </form>
       
       <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">AI can make mistakes. Check important information.</p>
         <Popover open={modeMenuOpen} onOpenChange={setModeMenuOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -275,8 +274,8 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
           </PopoverTrigger>
           <PopoverContent align="end" side="top" sideOffset={8} className="w-64 p-1">
             {([
-              { value: "chat" as const, label: "Chat", description: "Everyday conversations", icon: MessageSquare },
-              { value: "work" as const, label: "Work", description: "Focused tasks and projects", icon: Briefcase },
+              { value: "chat" as const, label: "Chat", tooltip: "For everyday conversations", icon: MessageSquare },
+              { value: "work" as const, label: "Work", tooltip: "For focused tasks and projects", icon: Briefcase },
             ]).map((option) => {
               const Icon = option.icon;
               const selected = mode === option.value;
@@ -290,12 +289,12 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
                   }}
                   className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent ${selected ? "bg-accent/70" : ""}`}
                   aria-pressed={selected}
+                  title={option.tooltip}
                   data-testid={`button-mode-${option.value}`}
                 >
                   <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">{option.label}</span>
-                    <span className="block text-xs text-muted-foreground">{option.description}</span>
                   </span>
                   {selected && <Check className="h-4 w-4 text-primary" />}
                 </button>
@@ -303,6 +302,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
             })}
           </PopoverContent>
         </Popover>
+        <p className="text-xs text-muted-foreground">AI can make mistakes. Check important information.</p>
       </div>
     </div>
   );

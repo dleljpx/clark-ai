@@ -172,19 +172,6 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
             <Separator />
             <div className="flex items-center justify-between gap-4 pt-1">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Admin panel</p>
-                  <p className="text-xs text-muted-foreground">Protected app tools</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setView("access")}>
-                <KeyRound className="mr-2 h-4 w-4" /> Access
-              </Button>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between gap-4 pt-1">
-              <div className="flex items-center gap-3">
                 <Play className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Getting started</p>
@@ -193,6 +180,19 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
               </div>
               <Button variant="outline" size="sm" onClick={replayTutorial}>
                 Replay
+              </Button>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Admin panel</p>
+                  <p className="text-xs text-muted-foreground">Protected app tools</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setView("access")}>
+                <KeyRound className="mr-2 h-4 w-4" /> Access
               </Button>
             </div>
           </>
