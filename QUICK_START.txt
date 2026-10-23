@@ -1,0 +1,31 @@
+⚡ QUICK START - Getting Your CLARK AI Working
+
+THE PROBLEM:
+- Your app keeps showing Error 500 because Gemini API key is missing
+
+THE SOLUTION:
+1. Go to: https://aistudio.google.com/apikey
+2. Create an API key (it's FREE!)
+3. Copy the key
+4. Open the `.env` file in this folder
+5. Find this line: # GEMINI_API_KEY=your_api_key_here
+6. Remove the # and add your key:
+   GEMINI_API_KEY=AIzaSyD_4b5k7p9q2m8n1l3o5r7s9t1u3v5w7x
+7. Save the file
+8. Restart your dev server: npm run dev
+9. Visit: http://localhost:5000
+
+✅ THAT'S IT! Your app should work now!
+
+---
+
+ISSUES FIXED:
+✅ Added API key validation with clear error messages
+✅ Changed model to gemini-1.5-flash (more reliable)
+✅ Better error descriptions that tell you exactly what to do
+✅ Added .env file with setup instructions
+✅ Improved logging for debugging
+
+---
+
+MADE WITH ❤️ BY GITHUB COPILOT
