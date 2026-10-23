@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, User, Settings, Trash2, X, MessageSquare } from "lucide-react";
+import { Plus, User, Trash2, X, MessageSquare } from "lucide-react";
 import ThemeDialog from "./theme-dialog";
 import ConversationMenu from "./conversation-menu";
 import type { Conversation } from "@shared/schema";
@@ -13,6 +13,7 @@ interface ChatSidebarProps {
   onCloseSidebar: () => void;
   isCreatingConversation: boolean;
   isMobile: boolean;
+  displayName: string;
 }
 
 export default function ChatSidebar({
@@ -22,7 +23,8 @@ export default function ChatSidebar({
   onDeleteConversation,
   onCloseSidebar,
   isCreatingConversation,
-  isMobile
+  isMobile,
+  displayName
 }: ChatSidebarProps) {
   
   const formatTimestamp = (date: Date | null) => {
@@ -143,8 +145,7 @@ export default function ChatSidebar({
             <User className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">User</p>
-            <p className="text-xs text-muted-foreground">Active</p>
+            <p className="text-sm font-medium text-foreground">{displayName}</p>
           </div>
           <ThemeDialog />
         </div>

@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import ChatMessages from "@/components/chat/chat-messages";
 import ChatInput from "@/components/chat/chat-input";
+import OnboardingDialog from "@/components/chat/onboarding-dialog";
 import SystemInstructionsDialog from "@/components/chat/system-instructions-dialog";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Bot, Share, Download, Trash2 } from "lucide-react";
@@ -15,6 +16,8 @@ import type { Conversation, ConversationWithMessages, Message } from "@shared/sc
 export default function ChatPage() {
   const { conversationId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(() => localStorage.getItem("clark-tutorial-complete") !== "true");
+  const [displayName, setDisplayName] = useState(() => localStorage.getItem("clark-user-name") || "User");
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -114,6 +117,13 @@ export default function ChatPage() {
     createConversationMutation.mutate("");
   };
 
+  const handleOnboardingComplete = (name: string) => {
+    localStorage.setItem("clark-user-name", name);
+    localStorage.setItem("clark-tutorial-complete", "true");
+    setDisplayName(name);
+    setTutorialOpen(false);
+  };
+
   const handleDeleteConversation = (id: string) => {
     deleteConversationMutation.mutate(id);
   };
@@ -205,6 +215,7 @@ export default function ChatPage() {
           onCloseSidebar={() => setSidebarOpen(false)}
           isCreatingConversation={createConversationMutation.isPending}
           isMobile={isMobile}
+          displayName={displayName}
         />
       </div>
 
@@ -239,10 +250,6 @@ export default function ChatPage() {
               </div>
               <div>
                 <h2 className="font-semibold text-foreground">CLARK 2</h2>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs text-muted-foreground">Online</span>
-                </div>
               </div>
             </div>
           </div>
@@ -297,6 +304,12 @@ export default function ChatPage() {
           isGenerating={sendMessageMutation.isPending}
         />
       </div>
+
+      <OnboardingDialog
+        open={tutorialOpen}
+        onOpenChange={setTutorialOpen}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }
