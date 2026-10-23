@@ -83,7 +83,7 @@ export async function generateChatResponse(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3.5-haiku',
+        model: 'deepseek/deepseek-v4.1-flash',
         messages: [
           {
             role: 'system',
@@ -148,7 +148,7 @@ export async function generateConversationTitle(firstMessage: string) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3.5-haiku',
+        model: 'deepseek/deepseek-v4.1-flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 20,
