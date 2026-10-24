@@ -84,7 +84,7 @@ export async function generateChatResponse(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mode === 'chat' ? 'google/gemma-4-31b-it:free' : 'deepseek/deepseek-v4.1-flash',
+        model: mode === 'chat' ? 'nvidia/nemotron-3.5-lightning:free' : 'deepseek/deepseek-v4.1-flash',
         messages: [
           {
             role: 'system',
@@ -150,7 +150,7 @@ export async function generateConversationTitle(firstMessage: string, mode: 'cha
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mode === 'chat' ? 'google/gemma-4-31b-it:free' : 'deepseek/deepseek-v4.1-flash',
+        model: mode === 'chat' ? 'nvidia/nemotron-3.5-lightning:free' : 'deepseek/deepseek-v4.1-flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 20,
