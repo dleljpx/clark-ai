@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import ChatMessages from "@/components/chat/chat-messages";
 import ChatInput, { type ChatMode } from "@/components/chat/chat-input";
+import ThemeDialog, { type InterfaceMode } from "@/components/chat/theme-dialog";
 import OnboardingDialog from "@/components/chat/onboarding-dialog";
 import SystemInstructionsDialog from "@/components/chat/system-instructions-dialog";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,25 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Conversation, ConversationWithMessages, Message } from "@shared/schema";
 
+function getErrorCode(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    const match = error.message.match(/"error"\s*:\s*"([A-Z][A-Z0-9_]+)"/);
+    if (match) return match[1];
+  }
+  return fallback;
+}
+
 export default function ChatPage() {
   const { conversationId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(() => localStorage.getItem("clark-tutorial-complete") !== "true");
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("clark-user-name") || "User");
   const [chatMode, setChatMode] = useState<ChatMode>(() => localStorage.getItem("clark-chat-mode") === "chat" ? "chat" : "work");
+  const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>(() => {
+    const savedMode = localStorage.getItem("clark-interface-mode");
+    return savedMode === "plain" || savedMode === "drawing" ? savedMode : "default";
+  });
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -47,7 +61,7 @@ export default function ChatPage() {
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create new conversation",
+        description: "There was an error [CONVERSATION_CREATE_FAILED].",
         variant: "destructive",
       });
     },
@@ -67,7 +81,7 @@ export default function ChatPage() {
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to delete conversation",
+        description: "There was an error [CONVERSATION_DELETE_FAILED].",
         variant: "destructive",
       });
     },
@@ -84,7 +98,7 @@ export default function ChatPage() {
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to clear conversation",
+        description: "There was an error [CONVERSATION_CLEAR_FAILED].",
         variant: "destructive",
       });
     },
@@ -105,10 +119,11 @@ export default function ChatPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", variables.conversationId] });
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations", variables.conversationId] });
       toast({
         title: "Error",
-        description: error.message || "Failed to send message",
+        description: `There was an error [${getErrorCode(error, "CHAT_SEND_FAILED")}].`,
         variant: "destructive",
       });
     },
@@ -144,7 +159,7 @@ export default function ChatPage() {
       } catch {
         toast({
           title: "Error",
-          description: "Failed to create new conversation",
+          description: "There was an error [CONVERSATION_CREATE_FAILED].",
           variant: "destructive",
         });
         return;
@@ -165,6 +180,11 @@ export default function ChatPage() {
   const handleModeChange = (mode: ChatMode) => {
     setChatMode(mode);
     localStorage.setItem("clark-chat-mode", mode);
+  };
+
+  const handleInterfaceModeChange = (mode: InterfaceMode) => {
+    setInterfaceMode(mode);
+    localStorage.setItem("clark-interface-mode", mode);
   };
 
   const handleShareChat = () => {
@@ -222,14 +242,24 @@ export default function ChatPage() {
 
   const messages = currentConversation?.messages || [];
 
+  useEffect(() => {
+    if (sidebarRef.current) sidebarRef.current.inert = interfaceMode === "plain";
+  }, [interfaceMode]);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className={`flex h-screen overflow-hidden bg-background ${interfaceMode === "plain" ? "plain-mode" : ""} ${interfaceMode === "drawing" ? "drawing-mode" : ""}`}>
       {/* Sidebar */}
       <div className={`
-        w-80 bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out
-        ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
+        shrink-0 overflow-hidden bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ease-in-out
+        ${interfaceMode === "plain"
+          ? "w-0 -translate-x-4 opacity-0 pointer-events-none"
+          : isMobile
+            ? sidebarOpen
+              ? "w-80 translate-x-0 opacity-100"
+              : "w-80 -translate-x-full opacity-100"
+            : "w-80 translate-x-0 opacity-100"}
         ${isMobile ? "fixed z-30 h-full" : "relative"}
-      `}>
+      `} ref={sidebarRef} aria-hidden={interfaceMode === "plain"} style={{ backgroundColor: "var(--sidebar)" }}>
         <ChatSidebar
           conversations={conversations}
           currentConversationId={conversationId}
@@ -240,11 +270,14 @@ export default function ChatPage() {
           isMobile={isMobile}
           displayName={displayName}
           onReplayTutorial={() => setTutorialOpen(true)}
+          interfaceMode={interfaceMode}
+          onInterfaceModeChange={handleInterfaceModeChange}
+          showSettings={interfaceMode !== "plain"}
         />
       </div>
 
       {/* Mobile overlay */}
-      {isMobile && sidebarOpen && (
+      {interfaceMode !== "plain" && isMobile && sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-20"
           onClick={() => setSidebarOpen(false)}
@@ -255,7 +288,7 @@ export default function ChatPage() {
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-card border-b border-border p-4 flex items-center justify-between">
+        {interfaceMode !== "plain" && <div className="p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {isMobile && (
               <Button
@@ -313,7 +346,7 @@ export default function ChatPage() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Messages */}
         <ChatMessages
@@ -330,8 +363,19 @@ export default function ChatPage() {
           onModeChange={handleModeChange}
           disabled={sendMessageMutation.isPending}
           isGenerating={sendMessageMutation.isPending}
+          interfaceMode={interfaceMode}
         />
       </div>
+
+      {interfaceMode === "plain" && (
+        <div className="fixed bottom-4 left-4 z-40">
+          <ThemeDialog
+            onReplayTutorial={() => setTutorialOpen(true)}
+            interfaceMode={interfaceMode}
+            onInterfaceModeChange={handleInterfaceModeChange}
+          />
+        </div>
+      )}
 
       <OnboardingDialog
         open={tutorialOpen}

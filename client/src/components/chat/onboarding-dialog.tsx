@@ -78,13 +78,6 @@ const tutorialSteps = [
     target: "message-input",
     area: "chat",
   },
-  {
-    title: "Quick prompts",
-    description: "Use these buttons to insert a starter prompt into the message field. You can edit it before sending.",
-    icon: ImagePlus,
-    target: "quick-actions",
-    area: "chat",
-  },
 ];
 
 export default function OnboardingDialog({

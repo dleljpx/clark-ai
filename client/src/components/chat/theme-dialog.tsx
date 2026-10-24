@@ -18,7 +18,11 @@ import { KeyRound, Moon, Play, RefreshCw, Settings, ShieldCheck, Sun, Terminal }
 
 interface ThemeDialogProps {
   onReplayTutorial: () => void;
+  interfaceMode: InterfaceMode;
+  onInterfaceModeChange: (mode: InterfaceMode) => void;
 }
+
+export type InterfaceMode = "plain" | "default" | "drawing";
 
 interface AdminData {
   logs: string[];
@@ -34,7 +38,7 @@ function formatUptime(totalSeconds: number) {
   return [days ? `${days}d` : "", hours ? `${hours}h` : "", `${minutes}m`].filter(Boolean).join(" ");
 }
 
-export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
+export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfaceModeChange }: ThemeDialogProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<SettingsView>("theme");
@@ -62,16 +66,17 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (response.status === 401) {
-          setError("Admin access expired. Enter the password again.");
+          setError("ADMIN_SESSION_EXPIRED");
           setAccessToken("");
           setView("access");
           return;
         }
-        if (!response.ok) throw new Error("Could not load admin status.");
+        if (!response.ok) throw new Error("ADMIN_LOGS_FETCH_FAILED");
         setAdminData(await response.json());
         setError("");
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Could not load admin status.");
+        console.error("[ADMIN_LOGS_FETCH_FAILED]", loadError);
+        setError("ADMIN_LOGS_FETCH_FAILED");
       }
     };
 
@@ -112,7 +117,8 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
       setPassword("");
       setView("admin");
     } catch (accessError) {
-      setError(accessError instanceof Error ? accessError.message : "Access denied.");
+      console.error("[ADMIN_ACCESS_FAILED]", accessError);
+      setError("ADMIN_ACCESS_FAILED");
     } finally {
       setIsAccessing(false);
     }
@@ -125,11 +131,12 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
       const response = await fetch("/api/admin/logs", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (!response.ok) throw new Error("Could not refresh app logs.");
+      if (!response.ok) throw new Error("ADMIN_LOGS_REFRESH_FAILED");
       setAdminData(await response.json());
       setError("");
     } catch (refreshError) {
-      setError(refreshError instanceof Error ? refreshError.message : "Could not refresh app logs.");
+      console.error("[ADMIN_LOGS_REFRESH_FAILED]", refreshError);
+      setError("ADMIN_LOGS_REFRESH_FAILED");
     } finally {
       setIsRefreshing(false);
     }
@@ -146,7 +153,7 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0"
+          className={`h-8 w-8 p-0 ${interfaceMode === "plain" ? "text-foreground" : "text-sidebar-foreground"}`}
           title="Settings"
           data-tour="theme-settings"
           data-testid="button-settings"
@@ -168,6 +175,24 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
                 </Label>
               </div>
               <Switch id="theme-switch" checked={isDarkMode} onCheckedChange={toggleTheme} data-testid="theme-switch" />
+            </div>
+            <div className="space-y-2 py-2">
+              <Label>Interface</Label>
+              <div className="grid grid-cols-3 gap-1" role="group" aria-label="Interface mode">
+                {(["plain", "default", "drawing"] as const).map((mode) => (
+                  <Button
+                    key={mode}
+                    type="button"
+                    size="sm"
+                    variant={interfaceMode === mode ? "default" : "ghost"}
+                    aria-pressed={interfaceMode === mode}
+                    onClick={() => onInterfaceModeChange(mode)}
+                    data-testid={`button-interface-${mode}`}
+                  >
+                    {mode[0].toUpperCase() + mode.slice(1)}
+                  </Button>
+                ))}
+              </div>
             </div>
             <Separator />
             <div className="flex items-center justify-between gap-4 pt-1">
@@ -213,7 +238,7 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
                 aria-label="Admin password"
                 data-testid="input-admin-password"
               />
-              {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+              {error && <p className="text-sm text-destructive" role="alert">There was an error [{error}].</p>}
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => { setView("theme"); setError(""); }}>
                   Back
@@ -251,7 +276,7 @@ export default function ThemeDialog({ onReplayTutorial }: ThemeDialogProps) {
                 </Button>
               </div>
             </div>
-            {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+            {error && <p className="text-sm text-destructive" role="alert">There was an error [{error}].</p>}
             <div className="flex items-center gap-2 text-sm font-medium">
               <Terminal className="h-4 w-4" /> Recent app logs
             </div>

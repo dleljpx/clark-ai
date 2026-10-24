@@ -19,6 +19,7 @@ export interface IStorage {
   getMessagesForConversation(conversationId: string): Promise<Message[]>;
   getConversationWithMessages(conversationId: string): Promise<ConversationWithMessages | undefined>;
   createMessage(message: InsertMessage): Promise<Message>;
+  deleteMessage(id: string): Promise<void>;
   deleteMessagesForConversation(conversationId: string): Promise<void>;
 }
 
@@ -147,6 +148,10 @@ export class MemStorage implements IStorage {
     }
 
     return message;
+  }
+
+  async deleteMessage(id: string): Promise<void> {
+    this.messages.delete(id);
   }
 
   async deleteMessagesForConversation(conversationId: string): Promise<void> {

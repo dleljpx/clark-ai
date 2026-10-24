@@ -27,9 +27,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
+      console.error("[MESSAGE_COPY_FAILED]", err);
       toast({
         title: "Failed to copy",
-        description: "Could not copy message to clipboard",
+        description: "There was an error [MESSAGE_COPY_FAILED].",
         variant: "destructive",
       });
     }
@@ -261,12 +262,12 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           className={`p-3 rounded-2xl ${
             isUser
               ? "bg-primary text-primary-foreground rounded-br-md"
-              : "bg-white dark:bg-card border border-border text-gray-900 dark:text-foreground rounded-bl-md"
+              : "bg-white dark:bg-card text-gray-900 dark:text-foreground rounded-bl-md"
           }`}
         >
           {message.imageUrl && (
             <div className="mb-2">
-              <img src={message.imageUrl} alt="Uploaded" className="max-w-full h-auto rounded-lg border" />
+              <img src={message.imageUrl} alt="Uploaded" className="max-w-full h-auto rounded-lg" />
             </div>
           )}
 
@@ -285,10 +286,21 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         </div>
 
-        <div className={`flex ${isUser ? "justify-end" : "justify-start"} items-center mt-1 space-x-2`}>
+        <div className={`message-actions flex ${isUser ? "justify-end" : "justify-start"} items-center mt-1 space-x-2`}>
           <span className="text-xs text-muted-foreground">{formatTimestamp(message.createdAt)}</span>
 
-          {!isUser && (
+          {isUser ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={handleCopy}
+              aria-label="Copy message"
+              data-testid={`button-copy-${message.id}`}
+            >
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </Button>
+          ) : (
             <>
               <Button
                 variant="ghost"

@@ -84,7 +84,7 @@ export async function generateChatResponse(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mode === 'chat' ? 'openrouter/free' : 'deepseek/deepseek-v4.1-flash',
+        model: mode === 'chat' ? 'google/gemma-4-31b-it:free' : 'deepseek/deepseek-v4.1-flash',
         messages: [
           {
             role: 'system',
@@ -105,6 +105,7 @@ export async function generateChatResponse(
     const data = await response.json();
     return data.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error: any) {
+    console.error("[OPENROUTER_CHAT_FAILED]", error);
     if (!API_KEY) {
       throw new Error("CLARK is not configured correctly. Please check over the ENV VAR's in galaxy cloud.");
     } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
@@ -149,7 +150,7 @@ export async function generateConversationTitle(firstMessage: string, mode: 'cha
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mode === 'chat' ? 'openrouter/free' : 'deepseek/deepseek-v4.1-flash',
+        model: mode === 'chat' ? 'google/gemma-4-31b-it:free' : 'deepseek/deepseek-v4.1-flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 20,
@@ -163,7 +164,8 @@ export async function generateConversationTitle(firstMessage: string, mode: 'cha
     title = title.replace(/^["']|["']$/g, '');
 
     return title || "New Conversation";
-  } catch {
+  } catch (error) {
+    console.error("[OPENROUTER_TITLE_FAILED]", error);
     const words = firstMessage.split(' ').slice(0, 4);
     return words.join(' ');
   }

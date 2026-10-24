@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, User, Trash2, X, MessageSquare } from "lucide-react";
 import ThemeDialog from "./theme-dialog";
+import type { InterfaceMode } from "./theme-dialog";
 import ConversationMenu from "./conversation-menu";
 import type { Conversation } from "@shared/schema";
 
@@ -15,6 +16,9 @@ interface ChatSidebarProps {
   isMobile: boolean;
   onReplayTutorial: () => void;
   displayName: string;
+  interfaceMode: InterfaceMode;
+  onInterfaceModeChange: (mode: InterfaceMode) => void;
+  showSettings?: boolean;
 }
 
 export default function ChatSidebar({
@@ -26,7 +30,10 @@ export default function ChatSidebar({
   isCreatingConversation,
   isMobile,
   onReplayTutorial,
-  displayName
+  displayName,
+  interfaceMode,
+  onInterfaceModeChange,
+  showSettings = true
 }: ChatSidebarProps) {
   
   const formatTimestamp = (date: Date | null) => {
@@ -60,9 +67,8 @@ export default function ChatSidebar({
   return (
     <>
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-foreground">CLARK</h1>
+      <div className="p-4">
+        <div className="flex items-center justify-end">
           {isMobile && (
             <Button
               variant="ghost"
@@ -78,7 +84,7 @@ export default function ChatSidebar({
         <Button
           onClick={onNewChat}
           disabled={isCreatingConversation}
-          className="w-full mt-3 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="w-full mt-0 bg-primary text-primary-foreground hover:bg-primary/90"
           data-tour="new-chat"
           data-testid="button-new-chat"
         >
@@ -93,26 +99,26 @@ export default function ChatSidebar({
           {conversations.length === 0 ? (
             <div className="text-center py-8">
               <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No conversations yet</p>
-              <p className="text-xs text-muted-foreground">Start a new chat to begin</p>
+              <p className="text-sm text-sidebar-foreground/75">No conversations yet</p>
+              <p className="text-xs text-sidebar-foreground/55">Start a new chat to begin</p>
             </div>
           ) : (
             conversations.map((conversation) => (
               <div
                 key={conversation.id}
                 className={`
-                  group p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors
-                  ${currentConversationId === conversation.id ? 'border-l-2 border-primary bg-accent' : ''}
+                  group p-3 rounded-md hover:bg-sidebar-accent cursor-pointer transition-colors
+                  ${currentConversationId === conversation.id ? 'border-l-2 border-primary bg-sidebar-accent' : ''}
                 `}
                 onClick={() => handleConversationClick(conversation.id)}
                 data-testid={`conversation-item-${conversation.id}`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-foreground truncate" title={conversation.title}>
+                    <h3 className="font-medium text-sm text-sidebar-foreground truncate" title={conversation.title}>
                       {truncateTitle(conversation.title)}
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-sidebar-foreground/60">
                       {formatTimestamp(conversation.updatedAt || conversation.createdAt)}
                     </span>
                   </div>
@@ -142,15 +148,21 @@ export default function ChatSidebar({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
             <User className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">{displayName}</p>
+            <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>
           </div>
-          <ThemeDialog onReplayTutorial={onReplayTutorial} />
+          {showSettings && (
+            <ThemeDialog
+              onReplayTutorial={onReplayTutorial}
+              interfaceMode={interfaceMode}
+              onInterfaceModeChange={onInterfaceModeChange}
+            />
+          )}
         </div>
       </div>
     </>

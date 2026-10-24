@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Send, Lightbulb, Code, Brain, FileText, Image, X, MessageSquare, Briefcase, ChevronDown, Check } from "lucide-react";
+import { Send, Image, X, MessageSquare, Briefcase, ChevronDown, Check } from "lucide-react";
+import type { InterfaceMode } from "./theme-dialog";
 
 export type ChatMode = "chat" | "work";
 
@@ -12,9 +13,10 @@ interface ChatInputProps {
   onModeChange: (mode: ChatMode) => void;
   disabled: boolean;
   isGenerating: boolean;
+  interfaceMode: InterfaceMode;
 }
 
-export default function ChatInput({ onSendMessage, mode, onModeChange, disabled, isGenerating }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, mode, onModeChange, disabled, interfaceMode }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [showCharCount, setShowCharCount] = useState(false);
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
@@ -127,43 +129,15 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
     }
   };
 
-  const quickActions = [
-    {
-      icon: Lightbulb,
-      label: "Explain this concept",
-      prompt: "Can you explain a concept to me?",
-    },
-    {
-      icon: Code,
-      label: "Help me code",
-      prompt: "I need help with coding. Can you assist me?",
-    },
-    {
-      icon: Brain,
-      label: "Brainstorm ideas",
-      prompt: "Let's brainstorm some ideas together!",
-    },
-    {
-      icon: FileText,
-      label: "Summarize text",
-      prompt: "Can you help me summarize some text?",
-    },
-  ];
-
-  const handleQuickAction = (prompt: string) => {
-    setMessage(prompt);
-    textareaRef.current?.focus();
-  };
-
   return (
-    <div className="bg-card border-t border-border p-4">
+    <div className={`bg-card p-4 ${interfaceMode === "plain" ? "plain-mode-composer bg-background pl-16" : ""}`}>
       {/* Image Preview */}
       {imagePreview && (
         <div className="mb-3 relative inline-block">
           <img 
             src={imagePreview} 
             alt="Selected" 
-            className="max-w-32 max-h-32 rounded-lg border"
+            className="max-w-32 max-h-32 rounded-lg"
           />
           <Button
             type="button"
@@ -178,25 +152,30 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
         </div>
       )}
 
-      <div className="mb-3 flex flex-wrap gap-2" data-tour="quick-actions">
-        {quickActions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Button
-              key={action.label}
-              variant="secondary"
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => handleQuickAction(action.prompt)}
-              disabled={disabled}
-              data-testid={`button-quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              <Icon className="h-3 w-3 mr-1" />
-              {action.label}
-            </Button>
-          );
-        })}
-      </div>
+      {interfaceMode === "plain" && (
+        <div className="mb-2 flex gap-1" role="group" aria-label="Chat mode">
+          {([
+            { value: "chat" as const, label: "Chat", icon: MessageSquare },
+            { value: "work" as const, label: "Work", icon: Briefcase },
+          ]).map((option) => {
+            const Icon = option.icon;
+            return (
+              <Button
+                key={option.value}
+                type="button"
+                size="sm"
+                variant={mode === option.value ? "secondary" : "ghost"}
+                className="h-7 px-2"
+                onClick={() => onModeChange(option.value)}
+                aria-pressed={mode === option.value}
+                data-testid={`button-plain-mode-${option.value}`}
+              >
+                <Icon className="mr-1 h-3.5 w-3.5" />{option.label}
+              </Button>
+            );
+          })}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
         <input
@@ -254,12 +233,12 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
         </Button>
       </form>
       
-      <div className="mt-2 flex items-center justify-between gap-3">
+      {interfaceMode !== "plain" && <div className="mt-2 flex items-center justify-between gap-3">
         <Popover open={modeMenuOpen} onOpenChange={setModeMenuOpen}>
           <PopoverTrigger asChild>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
               className="h-7 shrink-0 gap-1.5 px-2.5"
               title="Choose chat mode"
@@ -303,7 +282,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
           </PopoverContent>
         </Popover>
         <p className="text-xs text-muted-foreground">AI can make mistakes. Check important information.</p>
-      </div>
+      </div>}
     </div>
   );
 }

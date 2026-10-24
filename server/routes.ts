@@ -11,6 +11,11 @@ const MAX_ADMIN_LOGIN_ATTEMPTS = 5;
 const ADMIN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 let adminLoginFailures = { count: 0, resetAt: 0 };
 
+function sendRouteError(res: import("express").Response, code: string, error: unknown) {
+  console.error(`[${code}]`, error);
+  return res.status(500).json({ error: code });
+}
+
 function passwordMatches(provided: string, expected: string) {
   const providedBytes = Buffer.from(provided);
   const expectedBytes = Buffer.from(expected);
@@ -90,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conversations = await storage.getConversationsForUser(userId);
       res.json(conversations);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch conversations" });
+      sendRouteError(res, "CONVERSATIONS_FETCH_FAILED", error);
     }
   });
 
@@ -106,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(conversation);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch conversation" });
+      sendRouteError(res, "CONVERSATION_FETCH_FAILED", error);
     }
   });
 
@@ -125,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conversation = await storage.createConversation(conversationData);
       res.status(201).json(conversation);
     } catch (error) {
-      res.status(500).json({ error: "Failed to create conversation" });
+      sendRouteError(res, "CONVERSATION_CREATE_FAILED", error);
     }
   });
 
@@ -136,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete conversation" });
+      sendRouteError(res, "CONVERSATION_DELETE_FAILED", error);
     }
   });
 
@@ -153,7 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Handle image messages
-      let finalContent = content || "";
+      const submittedContent = typeof content === "string" ? content.trim() : "";
+      const aiPrompt = submittedContent || (imageBase64 ? "What do you see in this image?" : "");
+      let finalContent = submittedContent;
       let imageText = null;
       let imageUrl = null;
 
@@ -177,11 +184,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Store the image with correct MIME type
         imageUrl = `data:${imageMimeType};base64,${imageBase64}`;
-        finalContent = content || "What do you see in this image?";
-      }
-
-      if (!finalContent || finalContent.trim().length === 0) {
-        return res.status(400).json({ error: "Message content is required" });
       }
 
       // Check if conversation exists
@@ -207,6 +209,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));
+      if (imageBase64 && !submittedContent) {
+        chatHistory[chatHistory.length - 1].content = aiPrompt;
+      }
 
       try {
         // Check if this is the first message in the conversation
@@ -227,15 +232,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               await storage.updateConversationTitle(conversationId, title);
             } catch (titleError) {
-              // Continue anyway, title update is not critical
+              console.error("[CONVERSATION_TITLE_UPDATE_FAILED]", titleError);
             }
           } else {
             // Fallback to old method if no title was found in response
             try {
-              const fallbackTitle = await generateConversationTitle(content, mode);
+              const fallbackTitle = await generateConversationTitle(aiPrompt, mode);
               await storage.updateConversationTitle(conversationId, fallbackTitle);
             } catch (titleError) {
-              // Title generation failed, continue anyway
+              console.error("[CONVERSATION_TITLE_GENERATION_FAILED]", titleError);
             }
           }
         }
@@ -255,25 +260,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (aiError: any) {
-        const errorMessage = aiError.message || "Failed to generate AI response";
-        
-        // Check if it's an API key issue
-        if (errorMessage.includes("API key") || errorMessage.includes("not configured")) {
-          return res.status(503).json({ 
-            error: errorMessage,
-            hint: "Please configure your CLARK API key. Visit: https://aistudio.google.com/apikey",
-            userMessage
-          });
+        console.error("[CHAT_SEND_FAILED] AI response generation failed:", aiError);
+        try {
+          await storage.deleteMessage(userMessage.id);
+        } catch (rollbackError) {
+          console.error("[CHAT_SEND_FAILED] Could not remove failed user message:", rollbackError);
         }
-        
-        res.status(500).json({ 
-          error: errorMessage,
-          userMessage // Still return the user message even if AI fails
-        });
+        res.status(500).json({ error: "CHAT_SEND_FAILED" });
       }
 
     } catch (error) {
-      res.status(500).json({ error: "Failed to process message" });
+      sendRouteError(res, "CHAT_SEND_FAILED", error);
     }
   });
 
@@ -284,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteMessagesForConversation(id);
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ error: "Failed to clear conversation" });
+      sendRouteError(res, "CONVERSATION_CLEAR_FAILED", error);
     }
   });
 
@@ -294,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const instructions = getSystemInstructions();
       res.json({ instructions });
     } catch (error) {
-      res.status(500).json({ error: "Failed to get system instructions" });
+      sendRouteError(res, "SYSTEM_INSTRUCTIONS_FETCH_FAILED", error);
     }
   });
 
@@ -310,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setSystemInstructions(instructions);
       res.json({ success: true, instructions: getSystemInstructions() });
     } catch (error) {
-      res.status(500).json({ error: "Failed to update system instructions" });
+      sendRouteError(res, "SYSTEM_INSTRUCTIONS_UPDATE_FAILED", error);
     }
   });
 
@@ -332,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateConversationSystemInstructions(id, instructions);
       res.json({ success: true, instructions });
     } catch (error) {
-      res.status(500).json({ error: "Failed to update conversation system instructions" });
+      sendRouteError(res, "CONVERSATION_INSTRUCTIONS_UPDATE_FAILED", error);
     }
   });
 

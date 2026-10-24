@@ -29,9 +29,10 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
       setInstructions(data.instructions);
       setOriginalInstructions(data.instructions);
     } catch (error) {
+      console.error("[SYSTEM_INSTRUCTIONS_FETCH_FAILED]", error);
       toast({
         title: "Error",
-        description: "Failed to load system instructions",
+        description: "There was an error [SYSTEM_INSTRUCTIONS_FETCH_FAILED].",
         variant: "destructive",
       });
     } finally {
@@ -58,9 +59,10 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
         throw new Error("Failed to save instructions");
       }
     } catch (error) {
+      console.error("[SYSTEM_INSTRUCTIONS_UPDATE_FAILED]", error);
       toast({
         title: "Error",
-        description: "Failed to save system instructions",
+        description: "There was an error [SYSTEM_INSTRUCTIONS_UPDATE_FAILED].",
         variant: "destructive",
       });
     } finally {
@@ -107,7 +109,7 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
         </Button>
       </DialogTrigger>
       <DialogContent 
-        className="max-w-2xl max-h-[80vh] flex flex-col"
+        className="w-[calc(100vw-2rem)] max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
@@ -118,12 +120,12 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
           </p>
         </DialogHeader>
         
-        <div className="flex-1 space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           <Textarea
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             placeholder="Enter system instructions for CLARK AI..."
-            className="min-h-[300px] resize-none"
+            className="min-h-48 max-h-[50vh] resize-none"
             disabled={isLoading || isSaving}
             data-testid="textarea-system-instructions"
           />

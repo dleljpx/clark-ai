@@ -42,9 +42,10 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
         throw new Error("Failed to update conversation instructions");
       }
     } catch (error) {
+      console.error("[CONVERSATION_INSTRUCTIONS_UPDATE_FAILED]", error);
       toast({
         title: "Error",
-        description: "Failed to update conversation system instructions",
+        description: "There was an error [CONVERSATION_INSTRUCTIONS_UPDATE_FAILED].",
         variant: "destructive",
       });
     } finally {
@@ -90,7 +91,7 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
       </DropdownMenu>
 
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col">
           <DialogHeader>
             <DialogTitle>Conversation System Instructions</DialogTitle>
             <p className="text-sm text-muted-foreground">
@@ -98,11 +99,11 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
             </p>
           </DialogHeader>
           
-          <div className="flex-1">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <Textarea
               value={systemInstructions}
               readOnly
-              className="min-h-[300px] resize-none bg-muted"
+              className="min-h-48 max-h-[50vh] resize-none bg-muted"
               data-testid="conversation-system-instructions"
             />
           </div>
