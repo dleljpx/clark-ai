@@ -42,14 +42,61 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
   }, [message]);
 
   useEffect(() => {
+    const isTextEditingShortcut = (event: KeyboardEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return false;
+      if (event.altKey) return false;
+
+      const key = event.key.toLowerCase();
+      const textShortcutKeys = new Set([
+        'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+        '0','1','2','3','4','5','6','7','8','9',
+        '[',']',';',"'",',','.','/','\\','-','=','`',' ',
+      ]);
+
+      const navigationKeys = new Set([
+        'arrowleft','arrowright','arrowup','arrowdown','home','end','pageup','pagedown','backspace','delete','tab'
+      ]);
+
+      return textShortcutKeys.has(key) || navigationKeys.has(key);
+    };
+
     const focusComposerOnCharacter = (event: KeyboardEvent) => {
-      if (disabled || modeMenuOpen || event.defaultPrevented || event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
-      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
-      if (event.target instanceof HTMLElement && (
+      if (disabled || modeMenuOpen || event.defaultPrevented) return;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isEditableTarget = !!(event.target instanceof HTMLElement && (
         event.target.isContentEditable ||
-        event.target.closest("input, textarea, select, [role='menuitem']")
-      )) return;
-      if (document.activeElement === textareaRef.current) return;
+        event.target.closest("input, textarea, select, [role='menuitem'], [role='button']")
+      ));
+
+      if (isEditableTarget || activeElement === textareaRef.current) return;
+
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        if (isTextEditingShortcut(event)) {
+          event.preventDefault();
+          const textarea = textareaRef.current;
+          if (!textarea) return;
+
+          textarea.focus();
+          textarea.dispatchEvent(new KeyboardEvent(event.type, {
+            key: event.key,
+            code: event.code,
+            location: event.location,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            altKey: event.altKey,
+            shiftKey: event.shiftKey,
+            bubbles: true,
+            cancelable: true,
+            repeat: event.repeat,
+          }));
+        }
+        return;
+      }
+
+      if (event.key.length !== 1) return;
 
       event.preventDefault();
       setMessage((current) => current + event.key);
