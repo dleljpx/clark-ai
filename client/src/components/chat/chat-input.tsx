@@ -46,17 +46,67 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
       if ((!event.ctrlKey && !event.metaKey) || event.altKey) return false;
 
       const key = event.key.toLowerCase();
-      const shortcutKeys = new Set([
-        'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-        '0','1','2','3','4','5','6','7','8','9',
-        '[',']',';',"'",',','.','/','\\','-','=','`',' ',
-        'backspace','delete','tab','arrowleft','arrowright','arrowup','arrowdown','home','end','pageup','pagedown'
+      const textEditingShortcuts = new Set([
+        'a', 'c', 'v', 'x', 'z', 'y',
+        'backspace', 'delete',
+        'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'home', 'end',
+        'pageup', 'pagedown', 'tab'
       ]);
 
-      return shortcutKeys.has(key);
+      if (event.key === 'Tab' || event.key === 'Tab') return true;
+      return textEditingShortcuts.has(key);
+    };
+
+    const routeShortcutToComposer = (event: KeyboardEvent) => {
+      if (disabled || modeMenuOpen || event.defaultPrevented) return false;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isEditableTarget = !!(event.target instanceof HTMLElement && (
+        event.target.isContentEditable ||
+        event.target.closest("input, textarea, select, [role='menuitem'], [role='button']")
+      ));
+
+      if (isEditableTarget || activeElement === textareaRef.current) return false;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return false;
+
+      if (!(event.ctrlKey || event.metaKey)) return false;
+      if (event.altKey) return false;
+
+      const key = event.key.toLowerCase();
+      const browserOnlyShortcuts = new Set(['t', 'n', 'w', 'r', 'l', 'h', 'q', 'p']);
+      if (browserOnlyShortcuts.has(key)) return false;
+
+      if (!isTextShortcut(event)) return false;
+
+      event.preventDefault();
+      const textarea = textareaRef.current;
+      if (!textarea) return true;
+
+      textarea.focus();
+      if (key === 'a') {
+        textarea.select();
+        return true;
+      }
+
+      textarea.dispatchEvent(new KeyboardEvent(event.type, {
+        key: event.key,
+        code: event.code,
+        location: event.location,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        bubbles: true,
+        cancelable: true,
+        repeat: event.repeat,
+      }));
+
+      return true;
     };
 
     const focusComposerOnCharacter = (event: KeyboardEvent) => {
+      if (routeShortcutToComposer(event)) return;
+
       if (disabled || modeMenuOpen || event.defaultPrevented) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
@@ -67,18 +117,6 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
 
       if (isEditableTarget || activeElement === textareaRef.current) return;
       if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
-
-      if ((event.ctrlKey || event.metaKey) && isTextShortcut(event)) {
-        event.preventDefault();
-        textareaRef.current?.focus();
-        if (event.key.toLowerCase() === 'a') {
-          const textarea = textareaRef.current;
-          if (textarea) {
-            textarea.setSelectionRange(0, textarea.value.length);
-          }
-        }
-        return;
-      }
 
       if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
 
