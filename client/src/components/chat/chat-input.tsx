@@ -42,22 +42,18 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
   }, [message]);
 
   useEffect(() => {
-    const isTextEditingShortcut = (event: KeyboardEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return false;
-      if (event.altKey) return false;
+    const isTextShortcut = (event: KeyboardEvent) => {
+      if ((!event.ctrlKey && !event.metaKey) || event.altKey) return false;
 
       const key = event.key.toLowerCase();
-      const textShortcutKeys = new Set([
+      const shortcutKeys = new Set([
         'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
         '0','1','2','3','4','5','6','7','8','9',
         '[',']',';',"'",',','.','/','\\','-','=','`',' ',
+        'backspace','delete','tab','arrowleft','arrowright','arrowup','arrowdown','home','end','pageup','pagedown'
       ]);
 
-      const navigationKeys = new Set([
-        'arrowleft','arrowright','arrowup','arrowdown','home','end','pageup','pagedown','backspace','delete','tab'
-      ]);
-
-      return textShortcutKeys.has(key) || navigationKeys.has(key);
+      return shortcutKeys.has(key);
     };
 
     const focusComposerOnCharacter = (event: KeyboardEvent) => {
@@ -70,33 +66,21 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
       ));
 
       if (isEditableTarget || activeElement === textareaRef.current) return;
-
       if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
 
-      if (event.ctrlKey || event.metaKey || event.altKey) {
-        if (isTextEditingShortcut(event)) {
-          event.preventDefault();
+      if ((event.ctrlKey || event.metaKey) && isTextShortcut(event)) {
+        event.preventDefault();
+        textareaRef.current?.focus();
+        if (event.key.toLowerCase() === 'a') {
           const textarea = textareaRef.current;
-          if (!textarea) return;
-
-          textarea.focus();
-          textarea.dispatchEvent(new KeyboardEvent(event.type, {
-            key: event.key,
-            code: event.code,
-            location: event.location,
-            ctrlKey: event.ctrlKey,
-            metaKey: event.metaKey,
-            altKey: event.altKey,
-            shiftKey: event.shiftKey,
-            bubbles: true,
-            cancelable: true,
-            repeat: event.repeat,
-          }));
+          if (textarea) {
+            textarea.setSelectionRange(0, textarea.value.length);
+          }
         }
         return;
       }
 
-      if (event.key.length !== 1) return;
+      if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
 
       event.preventDefault();
       setMessage((current) => current + event.key);
