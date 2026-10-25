@@ -33,7 +33,8 @@ export async function generateChatResponse(
   isFirstMessage: boolean = false,
   conversationInstructions?: string,
   imageData?: { base64: string; mimeType: string },
-  mode: 'chat' | 'work' = 'work'
+  mode: 'chat' | 'work' = 'work',
+  userName = ""
 ): Promise<string> {
   try {
     if (!API_KEY) {
@@ -73,7 +74,8 @@ export async function generateChatResponse(
     }
 
     const activeInstructions = conversationInstructions || systemInstructions;
-    const instructions = isFirstMessage ? activeInstructions + TITLE_INSTRUCTION_SUFFIX : activeInstructions;
+    const nameContext = userName ? `\n\nThe user's chosen name is ${JSON.stringify(userName)}. Use it naturally when appropriate.` : "";
+    const instructions = `${isFirstMessage ? activeInstructions + TITLE_INSTRUCTION_SUFFIX : activeInstructions}${nameContext}`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -84,7 +86,9 @@ export async function generateChatResponse(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mode === 'chat' ? 'nvidia/nemotron-3.5-lightning:free' : 'deepseek/deepseek-v4.1-flash',
+        model: imageData
+          ? 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
+          : 'nvidia/nemotron-3.5-lightning:free',
         messages: [
           {
             role: 'system',
@@ -150,7 +154,7 @@ export async function generateConversationTitle(firstMessage: string, mode: 'cha
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mode === 'chat' ? 'nvidia/nemotron-3.5-lightning:free' : 'deepseek/deepseek-v4.1-flash',
+        model: 'nvidia/nemotron-3.5-lightning:free',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 20,

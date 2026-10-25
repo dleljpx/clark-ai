@@ -6,9 +6,10 @@ import type { Message } from "@shared/schema";
 
 interface MessageBubbleProps {
   message: Message;
+  onFeedbackChange?: (feedback: "liked" | "disliked" | null) => void;
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+export default function MessageBubble({ message, onFeedbackChange }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(null);
   const { toast } = useToast();
@@ -37,7 +38,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   };
 
   const handleLike = (isLike: boolean) => {
-    setLiked(liked === isLike ? null : isLike);
+    const nextLiked = liked === isLike ? null : isLike;
+    setLiked(nextLiked);
+    onFeedbackChange?.(nextLiked === null ? null : nextLiked ? "liked" : "disliked");
   };
 
   /**
@@ -322,29 +325,35 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 )}
               </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-6 px-2 text-xs ${
-                  liked === true ? "text-green-600 hover:text-green-700" : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => handleLike(true)}
-                data-testid={`button-like-${message.id}`}
-              >
-                <ThumbsUp className="h-3 w-3" />
-              </Button>
+              {onFeedbackChange && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-6 px-2 text-xs ${
+                      liked === true ? "text-green-600 hover:text-green-700" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => handleLike(true)}
+                    aria-label="Like latest reply"
+                    data-testid={`button-like-${message.id}`}
+                  >
+                    <ThumbsUp className="h-3 w-3" />
+                  </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-6 px-2 text-xs ${
-                  liked === false ? "text-red-600 hover:text-red-700" : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => handleLike(false)}
-                data-testid={`button-dislike-${message.id}`}
-              >
-                <ThumbsDown className="h-3 w-3" />
-              </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-6 px-2 text-xs ${
+                      liked === false ? "text-red-600 hover:text-red-700" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => handleLike(false)}
+                    aria-label="Dislike latest reply"
+                    data-testid={`button-dislike-${message.id}`}
+                  >
+                    <ThumbsDown className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
             </>
           )}
         </div>

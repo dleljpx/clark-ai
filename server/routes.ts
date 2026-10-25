@@ -151,6 +151,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id: conversationId } = req.params;
       const { content, imageBase64, imageMimeType } = req.body;
       const mode = req.body.mode === "chat" ? "chat" : "work";
+      const userName = typeof req.body.userName === "string" ? req.body.userName.trim().slice(0, 80) : "";
+      const feedback = req.body.feedback === "liked" || req.body.feedback === "disliked" ? req.body.feedback : null;
 
       // Validate request
       if (!content?.trim() && !imageBase64) {
@@ -159,7 +161,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle image messages
       const submittedContent = typeof content === "string" ? content.trim() : "";
-      const aiPrompt = submittedContent || (imageBase64 ? "What do you see in this image?" : "");
+      const feedbackPrefix = feedback ? `I ${feedback} that message. ` : "";
+      const aiPrompt = `${feedbackPrefix}${submittedContent || (imageBase64 ? "What do you see in this image?" : "")}`.trim();
       let finalContent = submittedContent;
       let imageText = null;
       let imageUrl = null;
@@ -209,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));
-      if (imageBase64 && !submittedContent) {
+      if (chatHistory.length > 0) {
         chatHistory[chatHistory.length - 1].content = aiPrompt;
       }
 
@@ -219,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Generate AI response using conversation-specific system instructions
         const imageData = imageBase64 ? { base64: imageBase64, mimeType: imageMimeType! } : undefined;
-        const aiResponse = await generateChatResponse(chatHistory, isFirstMessage, conversation.systemInstructions, imageData, mode);
+        const aiResponse = await generateChatResponse(chatHistory, isFirstMessage, conversation.systemInstructions, imageData, mode, userName);
         
         let finalAiResponse = aiResponse;
         

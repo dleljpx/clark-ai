@@ -10,16 +10,19 @@ interface ChatMessagesProps {
   isLoading: boolean;
   isGenerating: boolean;
   conversationTitle?: string;
+  onAssistantFeedback: (feedback: "liked" | "disliked" | null) => void;
 }
 
 export default function ChatMessages({ 
   messages, 
   isLoading, 
   isGenerating,
-  conversationTitle 
+  conversationTitle,
+  onAssistantFeedback
 }: ChatMessagesProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const latestAssistantMessageId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -61,6 +64,7 @@ export default function ChatMessages({
               <MessageBubble
                 key={message.id}
                 message={message}
+                onFeedbackChange={message.id === latestAssistantMessageId ? onAssistantFeedback : undefined}
               />
             ))}
             
