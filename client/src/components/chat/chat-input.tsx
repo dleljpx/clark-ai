@@ -78,28 +78,13 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
 
       if (!isTextShortcut(event)) return false;
 
-      event.preventDefault();
       const textarea = textareaRef.current;
       if (!textarea) return true;
 
       textarea.focus();
       if (key === 'a') {
-        textarea.select();
-        return true;
+        requestAnimationFrame(() => textarea.select());
       }
-
-      textarea.dispatchEvent(new KeyboardEvent(event.type, {
-        key: event.key,
-        code: event.code,
-        location: event.location,
-        ctrlKey: event.ctrlKey,
-        metaKey: event.metaKey,
-        altKey: event.altKey,
-        shiftKey: event.shiftKey,
-        bubbles: true,
-        cancelable: true,
-        repeat: event.repeat,
-      }));
 
       return true;
     };
