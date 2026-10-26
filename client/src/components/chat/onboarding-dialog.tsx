@@ -37,15 +37,15 @@ const tutorialSteps = [
     area: "sidebar",
   },
   {
-    title: "Choose your theme",
-    description: "Use this control to switch between light and dark appearance.",
+    title: "Settings",
+    description: "Manage different things.",
     icon: Settings,
     target: "theme-settings",
     area: "sidebar",
   },
   {
-    title: "Set assistant behavior",
-    description: "Open system instructions to customize how CLARK responds. You can set general instructions or instructions for this conversation.",
+    title: "Set speaking style",
+    description: "Open system instructions to customize how CLARK responds.",
     icon: Settings,
     target: "system-instructions",
     area: "chat",
@@ -59,7 +59,7 @@ const tutorialSteps = [
   },
   {
     title: "Choose a mode",
-    description: "Chat is for everyday conversations. Work is for more focused tasks and projects. Your choice is saved on this device.",
+    description: "Chat is for everyday conversations. Work is for more focused tasks and projects.",
     icon: MessageSquare,
     target: "chat-mode",
     area: "chat",
@@ -205,7 +205,7 @@ export default function OnboardingDialog({
 
         <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
           {isNameStep
-            ? "Your name will appear in the sidebar."
+            ? "This is what CLARK will call you."
             : currentStep.description}
         </p>
 

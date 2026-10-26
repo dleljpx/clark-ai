@@ -116,7 +116,7 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
         <DialogHeader>
           <DialogTitle>System Instructions</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Customize how CLARK AI behaves and responds. These instructions guide the AI's personality, expertise, and response style.
+            Customize how CLARK AI behaves and responds.
           </p>
         </DialogHeader>
         
