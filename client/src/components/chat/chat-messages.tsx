@@ -53,7 +53,7 @@ export default function ChatMessages({
                 Welcome to CLARK AI
               </h3>
               <p className="text-muted-foreground text-sm">
-                Hello I'm CLARK! You're personal helper friend.
+                Hello I'm CLARK! Your personal helper friend.
                 Ask me anything!
               </p>
             </div>
