@@ -47,7 +47,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
 
       const key = event.key.toLowerCase();
       const textEditingShortcuts = new Set([
-        'a', 'c', 'v', 'x', 'z', 'y',
+        'a', 'v', 'x', 'z', 'y',
         'backspace', 'delete',
         'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'home', 'end',
         'pageup', 'pagedown', 'tab'

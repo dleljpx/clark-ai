@@ -195,30 +195,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Conversation not found" });
       }
 
-      // Save user message
-      const userMessageData = insertMessageSchema.parse({
-        conversationId,
-        role: "user",
-        content: finalContent.trim(),
-        imageUrl: imageUrl,
-        imageText: imageText
-      });
-
-      const userMessage = await storage.createMessage(userMessageData);
-
-      // Get conversation history for context
+      // Build context without persisting the pending user message.
       const messages = await storage.getMessagesForConversation(conversationId);
       const chatHistory = messages.map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));
-      if (chatHistory.length > 0) {
-        chatHistory[chatHistory.length - 1].content = aiPrompt;
-      }
+      chatHistory.push({ role: 'user', content: aiPrompt });
 
+      let userMessageId: string | undefined;
       try {
         // Check if this is the first message in the conversation
-        const isFirstMessage = messages.length === 1;
+        const isFirstMessage = messages.length === 0;
         
         // Generate AI response using conversation-specific system instructions
         const imageData = imageBase64 ? { base64: imageBase64, mimeType: imageMimeType! } : undefined;
@@ -248,6 +236,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Persist the user and AI messages only after generation succeeds.
+        const userMessageData = insertMessageSchema.parse({
+          conversationId,
+          role: "user",
+          content: finalContent.trim(),
+          imageUrl,
+          imageText,
+        });
+        const userMessage = await storage.createMessage(userMessageData);
+        userMessageId = userMessage.id;
+
         // Save AI message with cleaned content
         const aiMessageData = insertMessageSchema.parse({
           conversationId,
@@ -264,10 +263,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       } catch (aiError: any) {
         console.error("[CHAT_SEND_FAILED] AI response generation failed:", aiError);
-        try {
-          await storage.deleteMessage(userMessage.id);
-        } catch (rollbackError) {
-          console.error("[CHAT_SEND_FAILED] Could not remove failed user message:", rollbackError);
+        if (userMessageId) {
+          try {
+            await storage.deleteMessage(userMessageId);
+          } catch (rollbackError) {
+            console.error("[CHAT_SEND_FAILED] Could not remove failed user message:", rollbackError);
+          }
         }
         res.status(500).json({ error: "CHAT_SEND_FAILED" });
       }
