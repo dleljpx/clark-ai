@@ -9,21 +9,26 @@ interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
   isGenerating: boolean;
+  isThinkingHarder: boolean;
   conversationTitle?: string;
-  onAssistantFeedback: (feedback: "liked" | "disliked" | null) => void;
+  onMessageFeedback: (
+    messageId: string,
+    conversationId: string,
+    role: "user" | "assistant",
+    feedback: "liked" | "disliked" | "cleared"
+  ) => void;
 }
 
 export default function ChatMessages({ 
   messages, 
   isLoading, 
   isGenerating,
+  isThinkingHarder,
   conversationTitle,
-  onAssistantFeedback
+  onMessageFeedback
 }: ChatMessagesProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const latestAssistantMessageId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
-
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,31 +49,34 @@ export default function ChatMessages({
     <ScrollArea className="flex-1 bg-background" ref={scrollAreaRef}>
       <div className="p-4 space-y-4">
         {messages.length === 0 ? (
-          <div className="flex justify-center py-12">
-            <div className="text-center max-w-md">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <Bot className="h-8 w-8 text-primary-foreground" />
+          <>
+            <div className="flex justify-center py-12">
+              <div className="text-center max-w-md">
+                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Bot className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Welcome to CLARK AI
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Hello I'm CLARK! Your personal helper friend.
+                  Ask me anything!
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Welcome to CLARK AI
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Hello I'm CLARK! Your personal helper friend.
-                Ask me anything!
-              </p>
             </div>
-          </div>
+            {isGenerating && <TypingIndicator isThinkingHarder={isThinkingHarder} />}
+          </>
         ) : (
           <>
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}
-                onFeedbackChange={message.id === latestAssistantMessageId ? onAssistantFeedback : undefined}
+                onFeedbackChange={onMessageFeedback}
               />
             ))}
             
-            {isGenerating && <TypingIndicator />}
+            {isGenerating && <TypingIndicator isThinkingHarder={isThinkingHarder} />}
           </>
         )}
         

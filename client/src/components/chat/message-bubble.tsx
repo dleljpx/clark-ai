@@ -1,17 +1,131 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Bot, User, Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Message } from "@shared/schema";
 
+const escapeHtml = (value: string) => value
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
+const inlineHtml = (value: string) => escapeHtml(value)
+  .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
+  .replace(/`([^`]+)`/g, "<code>$1</code>")
+  .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+  .replace(/\((.*?)\)\/%\^(.*?)\^%\//g, '<a href="$2">$1</a>');
+
+const inlinePlainText = (value: string) => value
+  .replace(/\((.*?)\)\/%\^(.*?)\^%\//g, "$1 ($2)")
+  .replace(/\*\*(.+?)\*\*/g, "$1")
+  .replace(/```|`/g, "");
+
+function renderTableForClipboard(source: string) {
+  const cells = Array.from(source.matchAll(/%R(\d+)\$C(\d+)\s*([\s\S]*?)(?=\s*%R\d+\$C\d+|$)/g));
+  const rows: Record<number, Record<number, string>> = {};
+  let maxRow = 0;
+  let maxColumn = 0;
+
+  for (const cell of cells) {
+    const row = Number(cell[1]);
+    const column = Number(cell[2]);
+    rows[row] ??= {};
+    rows[row][column] = cell[3].trim();
+    maxRow = Math.max(maxRow, row);
+    maxColumn = Math.max(maxColumn, column);
+  }
+
+  const htmlRows: string[] = [];
+  const textRows: string[] = [];
+  for (let rowNumber = 1; rowNumber <= maxRow; rowNumber++) {
+    const row = rows[rowNumber] ?? {};
+    const tag = rowNumber === 1 ? "th" : "td";
+    const values = Array.from({ length: maxColumn }, (_, index) => row[index + 1] ?? "");
+    htmlRows.push(`<tr>${values.map((value) => `<${tag}>${inlineHtml(value)}</${tag}>`).join("")}</tr>`);
+    textRows.push(values.map(inlinePlainText).join(" | "));
+  }
+
+  return {
+    html: `<table><tbody>${htmlRows.join("")}</tbody></table>`,
+    text: textRows.join("\n"),
+  };
+}
+
+function formatMessageForClipboard(content: string) {
+  const blocks: Array<{ html: string; text: string }> = [];
+  const storeBlock = (html: string, text: string) => {
+    const index = blocks.push({ html, text }) - 1;
+    return `\u0000BLOCK${index}\u0000`;
+  };
+
+  let formatted = content.replace(/@&([\s\S]*?)(?:&@|$)/g, (_match, tableContent: string) => {
+    const table = renderTableForClipboard(tableContent);
+    return storeBlock(table.html, table.text);
+  });
+
+  formatted = formatted.replace(/#([\s\S]*?)#/g, (match, listContent: string) => {
+    if ((listContent.match(/~/g) ?? []).length <= 2) return match;
+    const items = listContent.split(/~|\n/).map((item) => item.trim()).filter(Boolean);
+    return storeBlock(
+      `<ul>${items.map((item) => `<li>${inlineHtml(item)}</li>`).join("")}</ul>`,
+      items.map((item) => `- ${inlinePlainText(item)}`).join("\n")
+    );
+  });
+
+  const formattedParts = formatted.split(/(\u0000BLOCK\d+\u0000)/g);
+  const htmlParts: string[] = [];
+  const textParts: string[] = [];
+  for (const part of formattedParts) {
+    const blockMatch = part.match(/^\u0000BLOCK(\d+)\u0000$/);
+    if (blockMatch) {
+      const block = blocks[Number(blockMatch[1])];
+      htmlParts.push(block.html);
+      textParts.push(block.text);
+      continue;
+    }
+
+    const lines = part.split(/\r?\n/);
+    for (let index = 0; index < lines.length;) {
+      if (/^\s*-\s+/.test(lines[index])) {
+        const items: string[] = [];
+        while (index < lines.length && /^\s*-\s+/.test(lines[index])) {
+          items.push(lines[index].replace(/^\s*-\s+/, ""));
+          index++;
+        }
+        htmlParts.push(`<ul>${items.map((item) => `<li>${inlineHtml(item)}</li>`).join("")}</ul>`);
+        textParts.push(items.map((item) => `- ${inlinePlainText(item)}`).join("\n"));
+      } else {
+        htmlParts.push(inlineHtml(lines[index]));
+        textParts.push(inlinePlainText(lines[index]));
+        index++;
+      }
+      if (index < lines.length && !/^\s*-\s+/.test(lines[index])) {
+        htmlParts.push("<br>");
+        textParts.push("\n");
+      }
+    }
+  }
+
+  return { html: `<div>${htmlParts.join("")}</div>`, text: textParts.join("").trim() };
+}
+
 interface MessageBubbleProps {
   message: Message;
-  onFeedbackChange?: (feedback: "liked" | "disliked" | null) => void;
+  onFeedbackChange?: (
+    messageId: string,
+    conversationId: string,
+    role: "user" | "assistant",
+    feedback: "liked" | "disliked" | "cleared"
+  ) => void;
 }
 
 export default function MessageBubble({ message, onFeedbackChange }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(null);
+  const [imageZoomed, setImageZoomed] = useState(false);
   const { toast } = useToast();
 
   const formatTimestamp = (date: Date | null) => {
@@ -24,7 +138,33 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
+      if (message.imageUrl && !message.content.trim()) {
+        if (!navigator.clipboard.write || typeof ClipboardItem === "undefined") {
+          throw new Error("Image clipboard is not supported by this browser.");
+        }
+        const sourceBlob = await (await fetch(message.imageUrl)).blob();
+        const bitmap = await createImageBitmap(sourceBlob);
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        const pngBlob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Image conversion failed.")), "image/png");
+        });
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+      } else {
+        const clipboardContent = formatMessageForClipboard(message.content);
+        if (navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
+          const item = new ClipboardItem({
+            "text/html": new Blob([clipboardContent.html], { type: "text/html" }),
+            "text/plain": new Blob([clipboardContent.text], { type: "text/plain" }),
+          });
+          await navigator.clipboard.write([item]);
+        } else {
+          await navigator.clipboard.writeText(clipboardContent.text);
+        }
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -37,10 +177,42 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
     }
   };
 
+  const renderSectionText = (text: string, keyPrefix: string) => {
+    const lines = text.split("\n");
+    const nodes: React.ReactNode[] = [];
+    for (let index = 0; index < lines.length;) {
+      if (/^\s*-\s+/.test(lines[index])) {
+        const start = index;
+        const items: string[] = [];
+        while (index < lines.length && /^\s*-\s+/.test(lines[index])) {
+          items.push(lines[index].replace(/^\s*-\s+/, ""));
+          index++;
+        }
+        nodes.push(
+          <ul key={`${keyPrefix}-dash-list-${start}`} className="list-disc list-inside mb-2">
+            {items.map((item, itemIndex) => (
+              <li key={`${keyPrefix}-dash-list-${start}-${itemIndex}`}>{renderText(item, `${keyPrefix}-dash-${start}-${itemIndex}`)}</li>
+            ))}
+          </ul>
+        );
+      } else {
+        nodes.push(
+          <React.Fragment key={`${keyPrefix}-line-${index}`}>
+            {renderText(lines[index], `${keyPrefix}-line-${index}`)}
+            {index < lines.length - 1 ? <br /> : null}
+          </React.Fragment>
+        );
+        index++;
+      }
+    }
+    return nodes;
+  };
+
   const handleLike = (isLike: boolean) => {
     const nextLiked = liked === isLike ? null : isLike;
     setLiked(nextLiked);
-    onFeedbackChange?.(nextLiked === null ? null : nextLiked ? "liked" : "disliked");
+    const role = message.role === "user" ? "user" : "assistant";
+    onFeedbackChange?.(message.id, message.conversationId, role, nextLiked === null ? "cleared" : nextLiked ? "liked" : "disliked");
   };
 
   /**
@@ -126,22 +298,21 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
 
   /**
    * renderContent:
-   * - detects table blocks defined between @& ... &@ and renders tables using
+  * - detects table blocks defined between @& ... &@ and renders tables using
    *   %R{row}$C{col} text% tokens.
-   * - outside table blocks: detects list blocks wrapped by # ... # (must be
-   *   bounded by start/newline and newline/end) and renders lists using ~ as
+  * - outside table blocks: detects list blocks wrapped by # ... # and renders lists using ~ as
    *   bullet separators. Everything else is treated as regular text and passed
    *   through renderText for markdown handling.
    */
   const renderContent = (content: string) => {
     // Split into table vs non-table sections. Keep capturing group to preserve table content.
-    const tableSections = content.split(/@&([\s\S]*?)&@/g);
+    const tableSections = content.split(/@&([\s\S]*?)(?:&@|$)/g);
 
     return tableSections.map((section, i) => {
       // odd-index in the split = inside @& &@ table area
       if (i % 2 === 1) {
         // parse table rows/cols in this section
-        const tableRegex = /%R(\d+)\$C(\d+)\s+([^%]+)/g;
+        const tableRegex = /%R(\d+)\$C(\d+)\s*([\s\S]*?)(?=\s*%R\d+\$C\d+|$)/g;
         const tableMatches = Array.from(section.matchAll(tableRegex));
         if (tableMatches.length === 0) return null;
 
@@ -196,34 +367,22 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
       const parts: React.ReactNode[] = [];
       let lastIndex = 0;
 
-      // We'll find list blocks using a global regex, but validate boundaries manually.
       const listBlockRegex = /#([\s\S]*?)#/g;
       let match;
       while ((match = listBlockRegex.exec(section)) !== null) {
         const blockStart = match.index;
         const blockEnd = match.index + match[0].length;
-
-        // Validate that '#' is at start or after newline, and closing '#' is at end or before newline.
-        const charBefore = blockStart > 0 ? section[blockStart - 1] : "\n";
-        const charAfter = blockEnd < section.length ? section[blockEnd] : "\n";
-        const validStart = charBefore === "\n" || blockStart === 0;
-        const validEnd = charAfter === "\n" || blockEnd === section.length;
-
-        if (!validStart || !validEnd) {
-          // Not a valid list block (e.g. inline #tag), skip this match
-          continue;
-        }
+        const listRaw = match[1] || "";
+        if ((listRaw.match(/~/g) ?? []).length <= 2) continue;
 
         // push text before the list block
         if (blockStart > lastIndex) {
           const beforeText = section.slice(lastIndex, blockStart);
           parts.push(
-            <div key={`text-${i}-${lastIndex}`}>{renderText(beforeText, `outside-${i}-${lastIndex}`)}</div>
+            <div key={`text-${i}-${lastIndex}`}>{renderSectionText(beforeText, `outside-${i}-${lastIndex}`)}</div>
           );
         }
 
-        // extract raw list content from inside the #'s
-        const listRaw = match[1] || "";
         // split by ~ or newline, but keep items that contain non-whitespace
         const items = listRaw
           .split(/~|\n/g)
@@ -246,7 +405,7 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
       // push any remaining content after the last list block
       if (lastIndex < section.length) {
         const remaining = section.slice(lastIndex);
-        parts.push(<div key={`text-${i}-end`}>{renderText(remaining, `outside-${i}-end`)}</div>);
+        parts.push(<div key={`text-${i}-end`}>{renderSectionText(remaining, `outside-${i}-end`)}</div>);
       }
 
       return <div key={`section-${i}`}>{parts}</div>;
@@ -270,7 +429,9 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
         >
           {message.imageUrl && (
             <div className="mb-2">
-              <img src={message.imageUrl} alt="Uploaded" className="max-w-full h-auto rounded-lg" />
+              <button type="button" className="block cursor-zoom-in" onClick={() => setImageZoomed(true)} aria-label="Zoom uploaded image">
+                <img src={message.imageUrl} alt="Uploaded" className="max-w-full h-auto rounded-lg" />
+              </button>
             </div>
           )}
 
@@ -304,8 +465,7 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
             </Button>
           ) : (
-            <>
-              <Button
+            <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
@@ -323,18 +483,19 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
                     Copy
                   </>
                 )}
-              </Button>
+            </Button>
+          )}
 
-              {onFeedbackChange && (
-                <>
-                  <Button
+          {onFeedbackChange && (
+            <>
+              <Button
                     variant="ghost"
                     size="sm"
                     className={`h-6 px-2 text-xs ${
                       liked === true ? "text-green-600 hover:text-green-700" : "text-muted-foreground hover:text-foreground"
                     }`}
                     onClick={() => handleLike(true)}
-                    aria-label="Like latest reply"
+                    aria-label="Like message"
                     data-testid={`button-like-${message.id}`}
                   >
                     <ThumbsUp className="h-3 w-3" />
@@ -347,17 +508,22 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
                       liked === false ? "text-red-600 hover:text-red-700" : "text-muted-foreground hover:text-foreground"
                     }`}
                     onClick={() => handleLike(false)}
-                    aria-label="Dislike latest reply"
+                    aria-label="Dislike message"
                     data-testid={`button-dislike-${message.id}`}
                   >
                     <ThumbsDown className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
+              </Button>
             </>
           )}
         </div>
       </div>
+
+      <Dialog open={imageZoomed} onOpenChange={setImageZoomed}>
+        <DialogContent className="max-w-[95vw] border-0 bg-transparent p-0 shadow-none">
+          <DialogTitle className="sr-only">Uploaded image</DialogTitle>
+          {message.imageUrl && <img src={message.imageUrl} alt="Uploaded image enlarged" className="mx-auto max-h-[85vh] max-w-full object-contain" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

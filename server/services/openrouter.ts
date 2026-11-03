@@ -34,7 +34,8 @@ export async function generateChatResponse(
   conversationInstructions?: string,
   imageData?: { base64: string; mimeType: string },
   mode: 'chat' | 'work' = 'work',
-  userName = ""
+  userName = "",
+  onRetry?: () => void
 ): Promise<string> {
   try {
     if (!API_KEY) {
@@ -77,37 +78,48 @@ export async function generateChatResponse(
     const nameContext = userName ? `\n\nThe user's chosen name is ${JSON.stringify(userName)}. Use it naturally when appropriate.` : "";
     const instructions = `${isFirstMessage ? activeInstructions + TITLE_INSTRUCTION_SUFFIX : activeInstructions}${nameContext}`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'HTTP-Referer': 'https://clarkai.app',
-        'X-Title': 'CLARK AI',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: imageData
-          ? 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
-          : 'nvidia/nemotron-3.5-lightning:free',
-        messages: [
-          {
-            role: 'system',
-            content: `${instructions}\n\n${HIDDEN_SYSTEM_INSTRUCTIONS}`
-          },
-          ...openrouterMessages
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    });
+    const model = imageData
+      ? 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
+      : mode === 'work'
+        ? 'deepseek/deepseek-v3.2'
+        : 'nvidia/nemotron-3.5-lightning:free';
+    const apology = "I apologize, but I couldn't generate a response. Please try again.";
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(JSON.stringify(error));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'HTTP-Referer': 'https://clarkai.app',
+          'X-Title': 'CLARK AI',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content: `${instructions}\n\n${HIDDEN_SYSTEM_INSTRUCTIONS}`
+            },
+            ...openrouterMessages
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(JSON.stringify(error));
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content || apology;
+      if (content.trim() !== apology || attempt === 4) return content;
+      if (attempt === 0 && mode === 'chat') onRetry?.();
     }
 
-    const data = await response.json();
-    return data.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+    return apology;
   } catch (error: any) {
     console.error("[OPENROUTER_CHAT_FAILED]", error);
     if (!API_KEY) {

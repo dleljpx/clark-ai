@@ -27,7 +27,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(() => localStorage.getItem("clark-tutorial-complete") !== "true");
   const [displayName, setDisplayName] = useState(() => localStorage.getItem("clark-user-name") || "User");
-  const [pendingFeedback, setPendingFeedback] = useState<"liked" | "disliked" | null>(null);
+  const [generationConversationId, setGenerationConversationId] = useState(conversationId);
   const [chatMode, setChatMode] = useState<ChatMode>(() => localStorage.getItem("clark-chat-mode") === "chat" ? "chat" : "work");
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>(() => {
     const savedMode = localStorage.getItem("clark-interface-mode");
@@ -37,6 +37,10 @@ export default function ChatPage() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setGenerationConversationId(conversationId);
+  }, [conversationId]);
 
   // Fetch conversations list
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -107,8 +111,8 @@ export default function ChatPage() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ conversationId, content, imageData, mode, feedback, userName }: { conversationId: string; content: string; imageData?: { base64: string; mimeType: string }; mode: ChatMode; feedback: "liked" | "disliked" | null; userName: string }) => {
-      const payload: any = { content, mode, feedback, userName };
+    mutationFn: async ({ conversationId, content, imageData, mode, userName }: { conversationId: string; content: string; imageData?: { base64: string; mimeType: string }; mode: ChatMode; userName: string }) => {
+      const payload: any = { content, mode, userName };
       if (imageData) {
         payload.imageBase64 = imageData.base64;
         payload.imageMimeType = imageData.mimeType;
@@ -117,7 +121,6 @@ export default function ChatPage() {
       return response.json();
     },
     onSuccess: (_data, variables) => {
-      if (pendingFeedback === variables.feedback) setPendingFeedback(null);
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", variables.conversationId] });
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
     },
@@ -130,6 +133,27 @@ export default function ChatPage() {
       });
     },
   });
+
+  const { data: generationStatus } = useQuery<{ thinkingHarder: boolean }>({
+    queryKey: ["/api/conversations", generationConversationId, "generation-status"],
+    enabled: !!generationConversationId && sendMessageMutation.isPending,
+    refetchInterval: sendMessageMutation.isPending ? 500 : false,
+    staleTime: 0,
+  });
+
+  const handleMessageFeedback = (
+    messageId: string,
+    targetConversationId: string,
+    role: "user" | "assistant",
+    feedback: "liked" | "disliked" | "cleared"
+  ) => {
+    void apiRequest("POST", "/api/admin/feedback", {
+      messageId,
+      conversationId: targetConversationId,
+      role,
+      feedback,
+    }).catch((error) => console.error("[MESSAGE_FEEDBACK_LOG_FAILED]", error));
+  };
 
   const handleNewChat = () => {
     createConversationMutation.mutate("");
@@ -158,6 +182,7 @@ export default function ChatPage() {
       try {
         const response = await apiRequest("POST", "/api/conversations", { title: "New Conversation" });
         newConversation = await response.json();
+        setGenerationConversationId(newConversation.id);
       } catch {
         toast({
           title: "Error",
@@ -168,7 +193,7 @@ export default function ChatPage() {
       }
 
       try {
-        await sendMessageMutation.mutateAsync({ conversationId: newConversation.id, content, imageData, mode, feedback: pendingFeedback, userName: displayName });
+        await sendMessageMutation.mutateAsync({ conversationId: newConversation.id, content, imageData, mode, userName: displayName });
       } catch {
         // The server may have saved the message even if AI generation failed.
       }
@@ -176,7 +201,7 @@ export default function ChatPage() {
       return;
     }
 
-    sendMessageMutation.mutate({ conversationId, content, imageData, mode, feedback: pendingFeedback, userName: displayName });
+    sendMessageMutation.mutate({ conversationId, content, imageData, mode, userName: displayName });
   };
 
   const handleModeChange = (mode: ChatMode) => {
@@ -355,8 +380,9 @@ export default function ChatPage() {
           messages={messages}
           isLoading={isLoadingConversation}
           isGenerating={sendMessageMutation.isPending}
+          isThinkingHarder={chatMode === "chat" && generationStatus?.thinkingHarder === true}
           conversationTitle={currentConversation?.title}
-          onAssistantFeedback={setPendingFeedback}
+          onMessageFeedback={handleMessageFeedback}
         />
 
         {/* Input */}

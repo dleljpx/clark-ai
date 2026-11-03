@@ -4,12 +4,13 @@ import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { storage } from "./storage";
 import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
 import { generateChatResponse, generateConversationTitle, extractTitleFromResponse, setSystemInstructions, getSystemInstructions } from "./services/openrouter";
-import { getRecentLogs } from "./vite";
+import { getRecentLogs, log } from "./vite";
 
 const ADMIN_TOKEN_TTL_MS = 15 * 60 * 1000;
 const MAX_ADMIN_LOGIN_ATTEMPTS = 5;
 const ADMIN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 let adminLoginFailures = { count: 0, resetAt: 0 };
+const chatGenerationStatus = new Map<string, boolean>();
 
 function sendRouteError(res: import("express").Response, code: string, error: unknown) {
   console.error(`[${code}]`, error);
@@ -88,6 +89,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "running", uptimeSeconds: Math.floor(process.uptime()), logs: getRecentLogs() });
   });
 
+  app.post("/api/admin/feedback", (req, res) => {
+    const { messageId, conversationId, role, feedback } = req.body ?? {};
+    if (
+      typeof messageId !== "string" || messageId.length > 100 ||
+      typeof conversationId !== "string" || conversationId.length > 100 ||
+      (role !== "user" && role !== "assistant") ||
+      (feedback !== "liked" && feedback !== "disliked" && feedback !== "cleared")
+    ) {
+      return res.status(400).json({ error: "INVALID_MESSAGE_FEEDBACK" });
+    }
+
+    log(`${feedback} message feedback: ${messageId} (role=${role}, conversation=${conversationId})`, "feedback");
+    res.status(204).end();
+  });
+
   // Get conversations for current user
   app.get("/api/conversations", async (req, res) => {
     try {
@@ -97,6 +113,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       sendRouteError(res, "CONVERSATIONS_FETCH_FAILED", error);
     }
+  });
+
+  app.get("/api/conversations/:id/generation-status", (req, res) => {
+    res.json({ thinkingHarder: chatGenerationStatus.get(req.params.id) === true });
   });
 
   // Get conversation with messages
@@ -152,7 +172,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content, imageBase64, imageMimeType } = req.body;
       const mode = req.body.mode === "chat" ? "chat" : "work";
       const userName = typeof req.body.userName === "string" ? req.body.userName.trim().slice(0, 80) : "";
-      const feedback = req.body.feedback === "liked" || req.body.feedback === "disliked" ? req.body.feedback : null;
 
       // Validate request
       if (!content?.trim() && !imageBase64) {
@@ -161,8 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle image messages
       const submittedContent = typeof content === "string" ? content.trim() : "";
-      const feedbackPrefix = feedback ? `I ${feedback} that message. ` : "";
-      const aiPrompt = `${feedbackPrefix}${submittedContent || (imageBase64 ? "What do you see in this image?" : "")}`.trim();
+      const aiPrompt = `${submittedContent || (imageBase64 ? "What do you see in this image?" : "")}`.trim();
       let finalContent = submittedContent;
       let imageText = null;
       let imageUrl = null;
@@ -210,7 +228,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Generate AI response using conversation-specific system instructions
         const imageData = imageBase64 ? { base64: imageBase64, mimeType: imageMimeType! } : undefined;
-        const aiResponse = await generateChatResponse(chatHistory, isFirstMessage, conversation.systemInstructions, imageData, mode, userName);
+        if (mode === "chat") chatGenerationStatus.set(conversationId, false);
+        const aiResponse = await generateChatResponse(
+          chatHistory,
+          isFirstMessage,
+          conversation.systemInstructions,
+          imageData,
+          mode,
+          userName,
+          mode === "chat" ? () => chatGenerationStatus.set(conversationId, true) : undefined
+        );
+        chatGenerationStatus.delete(conversationId);
         
         let finalAiResponse = aiResponse;
         
@@ -262,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (aiError: any) {
+        chatGenerationStatus.delete(conversationId);
         console.error("[CHAT_SEND_FAILED] AI response generation failed:", aiError);
         if (userMessageId) {
           try {
