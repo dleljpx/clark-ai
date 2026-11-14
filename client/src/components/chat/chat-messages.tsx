@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User } from "lucide-react";
 import MessageBubble from "./message-bubble";
 import TypingIndicator from "./typing-indicator";
+import clarkLogo from "./clark-logo.svg";
 import type { Message } from "@shared/schema";
 
 interface ChatMessagesProps {
@@ -38,7 +38,7 @@ export default function ChatMessages({
     return (
       <div className="flex-1 flex items-center justify-center bg-background">
         <div className="text-center">
-          <Bot className="h-8 w-8 text-primary animate-pulse mx-auto mb-2" />
+          <img src={clarkLogo} alt="CLARK" className="h-8 w-8 animate-pulse mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">Loading conversation...</p>
         </div>
       </div>
@@ -52,9 +52,7 @@ export default function ChatMessages({
           <>
             <div className="flex justify-center py-12">
               <div className="text-center max-w-md">
-                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Bot className="h-8 w-8 text-primary-foreground" />
-                </div>
+                <img src={clarkLogo} alt="CLARK" className="h-16 w-16 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   Welcome to CLARK AI
                 </h3>

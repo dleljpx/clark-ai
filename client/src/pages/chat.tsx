@@ -9,7 +9,8 @@ import ThemeDialog, { type InterfaceMode } from "@/components/chat/theme-dialog"
 import OnboardingDialog from "@/components/chat/onboarding-dialog";
 import SystemInstructionsDialog from "@/components/chat/system-instructions-dialog";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Bot, Share, Download, Trash2 } from "lucide-react";
+import { Menu, X, Share, Download, Trash2 } from "lucide-react";
+import clarkLogo from "@/components/chat/clark-logo.svg";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Conversation, ConversationWithMessages, Message } from "@shared/schema";
@@ -329,11 +330,9 @@ export default function ChatPage() {
             )}
             
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <Bot className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <img src={clarkLogo} alt="CLARK" className="h-8 w-8 object-contain" />
               <div>
-                <h2 className="font-semibold text-foreground">CLARK</h2>
+                <h2 className="font-semibold text-foreground">LARK</h2>
               </div>
             </div>
           </div>

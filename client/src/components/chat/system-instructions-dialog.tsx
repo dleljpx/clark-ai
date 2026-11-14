@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Settings, Save, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -83,27 +83,16 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
   }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        // Prevent any potential navigation when closing
-        setTimeout(() => setIsOpen(false), 0);
-      } else {
-        setIsOpen(open);
-      }
-    }}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           className={className}
           title="System Instructions"
           data-tour="system-instructions"
           data-testid="button-system-instructions"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsOpen(true);
-          }}
         >
           <Settings className="h-4 w-4" />
         </Button>
@@ -115,9 +104,9 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
       >
         <DialogHeader>
           <DialogTitle>System Instructions</DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             Customize how CLARK AI behaves and responds.
-          </p>
+          </DialogDescription>
         </DialogHeader>
         
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
