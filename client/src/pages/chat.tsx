@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, Delete02Icon, Download01Icon, Menu01Icon, Share01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Delete02Icon, Download01Icon, Menu01Icon, Upload01Icon } from "@hugeicons/core-free-icons";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -359,7 +359,7 @@ export default function ChatPage() {
                 title="Share Chat"
                 data-testid="button-share-chat"
               >
-                <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
+                <HugeiconsIcon icon={Upload01Icon} className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
