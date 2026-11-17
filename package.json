@@ -13,6 +13,8 @@
   "dependencies": {
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^3.10.0",
+    "@hugeicons/core-free-icons": "^4.4.0",
+    "@hugeicons/react": "^1.1.10",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.4",
@@ -57,7 +59,6 @@
     "framer-motion": "^11.13.1",
     "groq-sdk": "^0.37.0",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.453.0",
     "memorystore": "^1.6.7",
     "next-themes": "^0.4.6",
     "openai": "^5.19.1",

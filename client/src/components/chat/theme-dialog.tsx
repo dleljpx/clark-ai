@@ -1,4 +1,6 @@
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Key02Icon, Moon02Icon, PlayIcon, Refresh01Icon, Settings01Icon, ShieldCheckIcon, Sun01Icon, TerminalIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -14,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { KeyRound, Moon, Play, RefreshCw, Settings, ShieldCheck, Sun, Terminal } from "lucide-react";
 
 interface ThemeDialogProps {
   onReplayTutorial: () => void;
@@ -158,7 +159,7 @@ export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfa
           data-tour="theme-settings"
           data-testid="button-settings"
         >
-          <Settings className="h-4 w-4" />
+          <HugeiconsIcon icon={Settings01Icon} className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className={view === "admin" ? "w-[calc(100%-2rem)] max-w-3xl" : "sm:max-w-md"}>
@@ -169,7 +170,7 @@ export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfa
             </DialogHeader>
             <div className="flex items-center justify-between gap-4 py-2">
               <div className="flex items-center gap-2">
-                {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+                {isDarkMode ? <HugeiconsIcon icon={Moon02Icon} className="h-5 w-5 text-muted-foreground" /> : <HugeiconsIcon icon={Sun01Icon} className="h-5 w-5 text-muted-foreground" />}
                 <Label htmlFor="theme-switch" className="text-sm font-medium">
                   {isDarkMode ? "Dark Mode" : "Light Mode"}
                 </Label>
@@ -197,7 +198,7 @@ export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfa
             <Separator />
             <div className="flex items-center justify-between gap-4 pt-1">
               <div className="flex items-center gap-3">
-                <Play className="h-5 w-5 text-muted-foreground" />
+                <HugeiconsIcon icon={PlayIcon} className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Replay tutorial</p>
                 </div>
@@ -209,13 +210,13 @@ export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfa
             <Separator />
             <div className="flex items-center justify-between gap-4 pt-1">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+                <HugeiconsIcon icon={ShieldCheckIcon} className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Admin panel</p>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={() => setView("access")}>
-                <KeyRound className="mr-2 h-4 w-4" /> Access
+                <HugeiconsIcon icon={Key02Icon} className="mr-2 h-4 w-4" /> Access
               </Button>
             </div>
           </>
@@ -260,7 +261,7 @@ export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfa
                   <DialogDescription className="mt-1">Read-only application status and recent server logs.</DialogDescription>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-sm border px-2 py-1 text-xs text-muted-foreground">
-                  <ShieldCheck className="h-3.5 w-3.5" /> Read only
+                  <HugeiconsIcon icon={ShieldCheckIcon} className="h-3.5 w-3.5" /> Read only
                 </span>
               </div>
             </DialogHeader>
@@ -272,13 +273,13 @@ export default function ThemeDialog({ onReplayTutorial, interfaceMode, onInterfa
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" onClick={() => void refreshAdmin()} disabled={isRefreshing} title="Refresh logs" aria-label="Refresh logs">
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                  <HugeiconsIcon icon={Refresh01Icon} className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 </Button>
               </div>
             </div>
             {error && <p className="text-sm text-destructive" role="alert">There was an error [{error}].</p>}
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Terminal className="h-4 w-4" /> Recent app logs
+              <HugeiconsIcon icon={TerminalIcon} className="h-4 w-4" /> Recent app logs
             </div>
             <pre className="max-h-[45vh] min-h-40 overflow-auto rounded-md bg-muted p-3 font-mono text-xs leading-relaxed text-foreground">
               {adminData?.logs.length ? adminData.logs.join("\n") : "No application logs captured yet."}

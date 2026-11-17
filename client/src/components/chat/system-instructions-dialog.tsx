@@ -1,8 +1,9 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { FloppyDiskIcon, RotateLeft01Icon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Settings, Save, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -94,7 +95,7 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
           data-tour="system-instructions"
           data-testid="button-system-instructions"
         >
-          <Settings className="h-4 w-4" />
+          <HugeiconsIcon icon={Settings01Icon} className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent 
@@ -129,7 +130,7 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
               className="h-auto p-1 text-xs"
               data-testid="button-reset-default"
             >
-              <RotateCcw className="h-3 w-3 mr-1" />
+              <HugeiconsIcon icon={RotateLeft01Icon} className="h-3 w-3 mr-1" />
               Reset to default
             </Button>
           </div>
@@ -161,7 +162,7 @@ export default function SystemInstructionsDialog({ className, conversationId }: 
               <>Saving...</>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
+                <HugeiconsIcon icon={FloppyDiskIcon} className="h-4 w-4 mr-2" />
                 Save Instructions
               </>
             )}

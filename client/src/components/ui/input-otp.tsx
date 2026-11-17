@@ -1,6 +1,7 @@
 import * as React from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { DotIcon } from "@hugeicons/core-free-icons"
 import { OTPInput, OTPInputContext } from "input-otp"
-import { Dot } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -61,7 +62,7 @@ const InputOTPSeparator = React.forwardRef<
   React.ComponentPropsWithoutRef<"div">
 >(({ ...props }, ref) => (
   <div ref={ref} role="separator" {...props}>
-    <Dot />
+    <HugeiconsIcon icon={DotIcon} className="h-4 w-4" />
   </div>
 ))
 InputOTPSeparator.displayName = "InputOTPSeparator"

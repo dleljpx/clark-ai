@@ -1,8 +1,9 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon, Briefcase01Icon, Cancel01Icon, Comment02Icon, Image01Icon, SentIcon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Send, Image, X, MessageSquare, Briefcase, ChevronDown, Check } from "lucide-react";
 import type { InterfaceMode } from "./theme-dialog";
 
 export type ChatMode = "chat" | "work";
@@ -201,7 +202,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
             onClick={removeImage}
             data-testid="button-remove-image"
           >
-            <X className="h-3 w-3" />
+            <HugeiconsIcon icon={Cancel01Icon} className="h-3 w-3" />
           </Button>
         </div>
       )}
@@ -209,8 +210,8 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
       {interfaceMode === "plain" && (
         <div className="mb-2 flex gap-1" role="group" aria-label="Chat mode">
           {([
-            { value: "chat" as const, label: "Chat", icon: MessageSquare },
-            { value: "work" as const, label: "Work", icon: Briefcase },
+            { value: "chat" as const, label: "Chat", icon: Comment02Icon },
+            { value: "work" as const, label: "Work", icon: Briefcase01Icon },
           ]).map((option) => {
             const Icon = option.icon;
             return (
@@ -224,7 +225,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
                 aria-pressed={mode === option.value}
                 data-testid={`button-plain-mode-${option.value}`}
               >
-                <Icon className="mr-1 h-3.5 w-3.5" />{option.label}
+                <HugeiconsIcon icon={Icon} className="mr-1 h-3.5 w-3.5" />{option.label}
               </Button>
             );
           })}
@@ -251,7 +252,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
           disabled={disabled}
           data-testid="button-upload-image"
         >
-          <Image className="h-4 w-4" />
+          <HugeiconsIcon icon={Image01Icon} className="h-4 w-4" />
         </Button>
         
         <div className="flex-1 relative">
@@ -283,7 +284,7 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
           className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           data-testid="button-send-message"
         >
-          <Send className="h-4 w-4" />
+          <HugeiconsIcon icon={SentIcon} className="h-4 w-4" />
         </Button>
       </form>
       
@@ -300,15 +301,15 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
               data-tour="chat-mode"
               data-testid="button-chat-mode"
             >
-              {mode === "chat" ? <MessageSquare className="h-3.5 w-3.5" /> : <Briefcase className="h-3.5 w-3.5" />}
+              {mode === "chat" ? <HugeiconsIcon icon={Comment02Icon} className="h-3.5 w-3.5" /> : <HugeiconsIcon icon={Briefcase01Icon} className="h-3.5 w-3.5" />}
               {mode === "chat" ? "Chat" : "Work"}
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <HugeiconsIcon icon={ArrowDown01Icon} className="h-3 w-3 text-muted-foreground" />
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" side="top" sideOffset={8} className="w-40 p-1">
             {([
-              { value: "chat" as const, label: "Chat", tooltip: "For everyday conversations", icon: MessageSquare },
-              { value: "work" as const, label: "Work", tooltip: "For focused tasks and projects", icon: Briefcase },
+              { value: "chat" as const, label: "Chat", tooltip: "For everyday conversations", icon: Comment02Icon },
+              { value: "work" as const, label: "Work", tooltip: "For focused tasks and projects", icon: Briefcase01Icon },
             ]).map((option) => {
               const Icon = option.icon;
               const selected = mode === option.value;
@@ -325,11 +326,11 @@ export default function ChatInput({ onSendMessage, mode, onModeChange, disabled,
                   title={option.tooltip}
                   data-testid={`button-mode-${option.value}`}
                 >
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <HugeiconsIcon icon={Icon} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">{option.label}</span>
                   </span>
-                  {selected && <Check className="h-3.5 w-3.5 text-primary" />}
+                  {selected && <HugeiconsIcon icon={Tick01Icon} className="h-3.5 w-3.5 text-primary" />}
                 </button>
               );
             })}

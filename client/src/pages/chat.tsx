@@ -1,3 +1,5 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, Delete02Icon, Download01Icon, Menu01Icon, Share01Icon } from "@hugeicons/core-free-icons";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +11,6 @@ import ThemeDialog, { type InterfaceMode } from "@/components/chat/theme-dialog"
 import OnboardingDialog from "@/components/chat/onboarding-dialog";
 import SystemInstructionsDialog from "@/components/chat/system-instructions-dialog";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Share, Download, Trash2 } from "lucide-react";
 import clarkLogo from "@/components/chat/clark-logo.svg";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -325,7 +326,7 @@ export default function ChatPage() {
                 onClick={() => setSidebarOpen(true)}
                 data-testid="button-open-sidebar"
               >
-                <Menu className="h-4 w-4" />
+                <HugeiconsIcon icon={Menu01Icon} className="h-4 w-4" />
               </Button>
             )}
             
@@ -348,7 +349,7 @@ export default function ChatPage() {
                 title="Clear Chat"
                 data-testid="button-clear-chat"
               >
-                <Trash2 className="h-4 w-4" />
+                <HugeiconsIcon icon={Delete02Icon} className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -358,7 +359,7 @@ export default function ChatPage() {
                 title="Share Chat"
                 data-testid="button-share-chat"
               >
-                <Share className="h-4 w-4" />
+                <HugeiconsIcon icon={Share01Icon} className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -368,7 +369,7 @@ export default function ChatPage() {
                 title="Export Chat"
                 data-testid="button-export-chat"
               >
-                <Download className="h-4 w-4" />
+                <HugeiconsIcon icon={Download01Icon} className="h-4 w-4" />
               </Button>
             </div>
           </div>

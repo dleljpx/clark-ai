@@ -1,6 +1,7 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, Cancel01Icon, Comment02Icon, Delete02Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, User, Trash2, X, MessageSquare } from "lucide-react";
 import ThemeDialog from "./theme-dialog";
 import type { InterfaceMode } from "./theme-dialog";
 import ConversationMenu from "./conversation-menu";
@@ -76,7 +77,7 @@ export default function ChatSidebar({
               onClick={onCloseSidebar}
               data-testid="button-close-sidebar"
             >
-              <X className="h-4 w-4" />
+              <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -88,7 +89,7 @@ export default function ChatSidebar({
           data-tour="new-chat"
           data-testid="button-new-chat"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <HugeiconsIcon icon={Add01Icon} className="h-4 w-4 mr-2" />
           {isCreatingConversation ? 'Creating...' : 'New Chat'}
         </Button>
       </div>
@@ -98,7 +99,7 @@ export default function ChatSidebar({
         <div className="space-y-1" data-tour="conversation-list">
           {conversations.length === 0 ? (
             <div className="text-center py-8">
-              <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <HugeiconsIcon icon={Comment02Icon} className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-sidebar-foreground/75">No conversations yet</p>
               <p className="text-xs text-sidebar-foreground/55">Start a new chat to begin</p>
             </div>
@@ -137,7 +138,7 @@ export default function ChatSidebar({
                       }}
                       data-testid={`button-delete-conversation-${conversation.id}`}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <HugeiconsIcon icon={Delete02Icon} className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -151,7 +152,7 @@ export default function ChatSidebar({
       <div className="p-4">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <User className="h-4 w-4 text-primary-foreground" />
+            <HugeiconsIcon icon={UserIcon} className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>

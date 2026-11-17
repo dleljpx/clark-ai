@@ -1,9 +1,10 @@
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { FileAttachmentIcon, MoreVerticalIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, FileText, RefreshCw } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -64,7 +65,7 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
             data-testid={`conversation-menu-${conversationId}`}
             onClick={(e) => e.preventDefault()}
           >
-            <MoreVertical className="h-3 w-3" />
+            <HugeiconsIcon icon={MoreVerticalIcon} className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -74,7 +75,7 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
               setShowInstructions(true);
             }}
           >
-            <FileText className="h-4 w-4 mr-2" />
+            <HugeiconsIcon icon={FileAttachmentIcon} className="h-4 w-4 mr-2" />
             System Instructions
           </DropdownMenuItem>
           <DropdownMenuItem 
@@ -84,7 +85,7 @@ export default function ConversationMenu({ conversationId, systemInstructions }:
             }}
             disabled={isUpdating}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <HugeiconsIcon icon={Refresh01Icon} className="h-4 w-4 mr-2" />
             {isUpdating ? "Updating..." : "Update Instructions"}
           </DropdownMenuItem>
         </DropdownMenuContent>

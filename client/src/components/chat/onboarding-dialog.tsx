@@ -1,16 +1,8 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon, ArrowRight01Icon, Cancel01Icon, Comment02Icon, ImageAdd01Icon, Settings01Icon, Tick01Icon, UserCircleIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  ImagePlus,
-  MessageSquare,
-  Settings,
-  UserRound,
-} from "lucide-react";
 
 interface OnboardingDialogProps {
   open: boolean;
@@ -25,56 +17,56 @@ const tutorialSteps = [
   {
     title: "Your conversations",
     description: "Choose New Chat to start fresh. Your existing conversations appear in the sidebar; select one to reopen it.",
-    icon: MessageSquare,
+    icon: Comment02Icon,
     target: "new-chat",
     area: "sidebar",
   },
   {
     title: "Manage conversations",
     description: "Open a conversation's menu to view or update its system instructions. The trash icon beside it deletes that conversation.",
-    icon: MessageSquare,
+    icon: Comment02Icon,
     target: "conversation-list",
     area: "sidebar",
   },
   {
     title: "Settings",
     description: "Manage different things.",
-    icon: Settings,
+    icon: Settings01Icon,
     target: "theme-settings",
     area: "sidebar",
   },
   {
     title: "Set speaking style",
     description: "Open system instructions to customize how CLARK responds.",
-    icon: Settings,
+    icon: Settings01Icon,
     target: "system-instructions",
     area: "chat",
   },
   {
     title: "Manage this chat",
     description: "These controls clear the current conversation, copy its share link, and download its messages as a JSON file.",
-    icon: MessageSquare,
+    icon: Comment02Icon,
     target: "chat-actions",
     area: "chat",
   },
   {
     title: "Choose a mode",
     description: "Chat is for everyday conversations. Work is for more focused tasks and projects.",
-    icon: MessageSquare,
+    icon: Comment02Icon,
     target: "chat-mode",
     area: "chat",
   },
   {
     title: "Attach an image",
     description: "Choose an image to attach it to your message. You can also paste an image directly into the message field.",
-    icon: ImagePlus,
+    icon: ImageAdd01Icon,
     target: "image-upload",
     area: "chat",
   },
   {
     title: "Write a message",
     description: "Type here and press Enter to send. Press Shift+Enter to add a new line.",
-    icon: MessageSquare,
+    icon: Comment02Icon,
     target: "message-input",
     area: "chat",
   },
@@ -94,7 +86,7 @@ export default function OnboardingDialog({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const isNameStep = step === tutorialSteps.length;
   const currentStep = tutorialSteps[step];
-  const StepIcon = isNameStep ? UserRound : currentStep.icon;
+  const StepIcon = isNameStep ? UserCircleIcon : currentStep.icon;
   const totalSteps = tutorialSteps.length + 1;
 
   useEffect(() => {
@@ -189,11 +181,11 @@ export default function OnboardingDialog({
           aria-label="Close tutorial"
           title="Close tutorial"
         >
-          <X className="h-4 w-4" />
+          <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" />
         </button>
         <div className="mb-3 flex items-center gap-3 pr-6">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <StepIcon className="h-5 w-5" />
+            <HugeiconsIcon icon={StepIcon} className="h-5 w-5" />
           </div>
           <div>
             <p className="text-xs font-medium uppercase text-primary">Step {step + 1} of {totalSteps}</p>
@@ -232,15 +224,15 @@ export default function OnboardingDialog({
 
         <div className="mt-5 flex items-center justify-between">
           <Button type="button" variant="ghost" size="sm" onClick={() => goToStep(step - 1)} disabled={step === 0}>
-            <ChevronLeft className="mr-1 h-4 w-4" /> Back
+            <HugeiconsIcon icon={ArrowLeft01Icon} className="mr-1 h-4 w-4" /> Back
           </Button>
           {!isNameStep ? (
             <Button type="button" size="sm" onClick={() => goToStep(step + 1)}>
-              Next <ChevronRight className="ml-1 h-4 w-4" />
+              Next <HugeiconsIcon icon={ArrowRight01Icon} className="ml-1 h-4 w-4" />
             </Button>
           ) : (
             <Button type="button" size="sm" onClick={finish} disabled={!name.trim()} data-testid="button-finish-onboarding">
-              Finish <Check className="ml-2 h-4 w-4" />
+              Finish <HugeiconsIcon icon={Tick01Icon} className="ml-2 h-4 w-4" />
             </Button>
           )}
         </div>

@@ -1,7 +1,8 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { BotIcon, Copy01Icon, ThumbsDownIcon, ThumbsUpIcon, Tick01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Bot, User, Copy, ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Message } from "@shared/schema";
 
@@ -462,7 +463,7 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
               aria-label="Copy message"
               data-testid={`button-copy-${message.id}`}
             >
-              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? <HugeiconsIcon icon={Tick01Icon} className="h-3 w-3" /> : <HugeiconsIcon icon={Copy01Icon} className="h-3 w-3" />}
             </Button>
           ) : (
             <Button
@@ -474,12 +475,12 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
               >
                 {copied ? (
                   <>
-                    <Check className="h-3 w-3 mr-1" />
+                    <HugeiconsIcon icon={Tick01Icon} className="h-3 w-3 mr-1" />
                     Copied
                   </>
                 ) : (
                   <>
-                    <Copy className="h-3 w-3 mr-1" />
+                    <HugeiconsIcon icon={Copy01Icon} className="h-3 w-3 mr-1" />
                     Copy
                   </>
                 )}
@@ -498,7 +499,7 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
                     aria-label="Like message"
                     data-testid={`button-like-${message.id}`}
                   >
-                    <ThumbsUp className="h-3 w-3" />
+                    <HugeiconsIcon icon={ThumbsUpIcon} className="h-3 w-3" />
                   </Button>
 
                   <Button
@@ -511,7 +512,7 @@ export default function MessageBubble({ message, onFeedbackChange }: MessageBubb
                     aria-label="Dislike message"
                     data-testid={`button-dislike-${message.id}`}
                   >
-                    <ThumbsDown className="h-3 w-3" />
+                    <HugeiconsIcon icon={ThumbsDownIcon} className="h-3 w-3" />
               </Button>
             </>
           )}
